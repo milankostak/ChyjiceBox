@@ -5,16 +5,13 @@
  * @requires chyjicebox.css
  * v3.0 - 27.12.2015
  * v3.0.1 - 20.7.2016 - refactor
+ * v3.1 - 7.9.2016 - removed BrowserDetect
  */
 "use strict";
 var ChyjiceBox;
 $(document).ready(function() {
 	ChyjiceBox = function() {
-		function BrowserDetect() {
-			this.ie = document.all ? true : false;
-			this.ff = (document.getBoxObjectFor !== null || window.mozInnerScreenX !== null);
-		}
-		var browser = new BrowserDetect();
+
 		var doc = $(document), body = $("body"), html = $("html");
 		// základní třída
 		var a = "chyjicebox";
@@ -457,8 +454,8 @@ $(document).ready(function() {
 		/** MouseWheel Listener */
 		function wheel(e) {
 			if (multi) {
-				var x = (browser.ff) ? e : event;
-				var down = (signum(x.wheelDelta || -x.detail) < 0);
+				// IE doesn't know wheelDelta
+				var down = (signum(e.originalEvent.wheelDeltaY || -e.detail) < 0);
 				if (down) loadNextImg();
 				else loadPrevImg();
 			    e.preventDefault();
@@ -468,9 +465,10 @@ $(document).ready(function() {
 		function signum(x) {
 			return x > 0 ? 1 : x < 0 ? -1 : 0;
 		}
-		box.bind("mousewheel", wheel);
-		if (browser.ff) document.getElementById(a).addEventListener("DOMMouseScroll", wheel, false);
 
+		box.bind("mousewheel DOMMouseScroll", wheel);
+
+		/** Key Listener */
 		function removeKeyListener() {
 			doc.unbind("keydown.chyjicebox-keypress");
 		}
@@ -542,8 +540,6 @@ $(document).ready(function() {
 		
 		/** Přednačtení ikon */ 
 		(function() {
-			if (browser.ff) prevDiv.css("font-size", "4em");
-			if (browser.ff) nextDiv.css("font-size", "4em");
 			var img1 = new Image();
 			img1.src = "/img/chyjicebox/loading.gif";
 			var img2 = new Image();
