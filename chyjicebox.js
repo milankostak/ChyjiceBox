@@ -71,10 +71,13 @@ $(document).ready(function() {
 
 		wrapper.append('<button id="'+a+'-close" title="Zavřít">✕</button>');
 		var closeButton = $('#'+a+'-close');
-		
+
+		wrapper.append('<button id="'+a+'-full" title="Celá obrazovka"></button>');
+		var fullScreenButton = $('#'+a+'-full');
+
 		wrapper.append('<a id="newtab" href="" onclick="window.open(this.href); return false;">Otevřít ve vlastním okně</a>');
 		var newtab = $('#newtab');
-		
+
 		wrapper.append('<iframe id="'+a+'-iframe" src=""></iframe>');
 		var iframe = $('#'+a+'-iframe');
 
@@ -98,11 +101,12 @@ $(document).ready(function() {
 				});
 			});
 		}
-		
+
 		/**
 		 * Close ligtbox
 		 */
 		var close = function() {
+			document.exitFullscreen();
 			removeKeyListener();
 			loading.hide();
 			iframe.hide();
@@ -533,6 +537,9 @@ $(document).ready(function() {
 								e.preventDefault();
 							}
 							break;
+					case 70: /* f */
+							toggleFullscreen();
+							break;
 					case 8: /* BackSpace */
 					case 13: /* Enter */
 							 e.preventDefault(); break;
@@ -551,12 +558,45 @@ $(document).ready(function() {
 				vid.currentTime = seekToTime;
 			}
 		}
+
+		var fsElement = document.body;
+		(function initFullscreen() {
+			fsElement.requestFullscreen = fsElement.requestFullscreen ||
+								fsElement.mozRequestFullscreen ||
+								fsElement.mozRequestFullScreen ||
+								fsElement.webkitRequestFullscreen ||
+								fsElement.msRequestFullscreen;
+			document.exitFullscreen = document.exitFullscreen ||
+								document.mozExitFullscreen ||
+								document.mozExitFullScreen ||
+								document.webkitExitFullscreen ||
+								document.msExitFullscreen;
+		})();
+
+		function toggleFullscreen() {
+			if (document.fullscreenElement === fsElement || document.webkitFullscreenElement === fsElement ||
+				document.mozFullscreenElement === fsElement || document.mozFullScreenElement === fsElement ||
+				document.msFullscreenElement === fsElement) {
+				document.exitFullscreen();
+				fullScreenButton.removeClass("shrink");
+			} else {
+				fsElement.requestFullscreen();
+				fullScreenButton.addClass("shrink");
+			}
+		}
+		fullScreenButton.click(toggleFullscreen);
+
+
 		/** Preload icons */
 		(function initIcons() {
 			var img1 = new Image();
 			img1.src = "/img/chyjicebox/loading.gif";
 			var img2 = new Image();
 			img2.src = "/img/chyjicebox/overlay.png";
+			var img3 = new Image();
+			img3.src = "/img/chyjicebox/full.png";
+			var img4 = new Image();
+			img4.src = "/img/chyjicebox/shrink.png";
 		})();
 
 //loadPrevImg/loadNextImg/el.click -> loadImg -> show (computeLightboxSize) -> animateChangeImg

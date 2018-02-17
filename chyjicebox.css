@@ -26,7 +26,7 @@
   overflow: hidden;
   display: none;
   padding: 10px;
-  background: url('/img/chyjicebox/overlay.png') repeat;
+  background: rgba(0, 0, 0, 0.4);
   color: white;
   z-index: 260;
   box-sizing: content-box;
@@ -53,6 +53,23 @@
   font-weight: bold;
   z-index: 261;
   color: rgba(255, 255, 255, 0.67);
+}
+#chyjicebox-wrapper > button#chyjicebox-full {
+  position: fixed;
+  top: 0;
+  right: 50px;
+  cursor: pointer;
+  background: none;
+  outline: none;
+  border: none;
+  width: 50px;
+  height: 50px;
+  z-index: 261;
+  background-image: url('/img/chyjicebox/full.png');
+  transform: scale(0.55);
+}
+#chyjicebox-wrapper > button#chyjicebox-full.shrink {
+  background-image: url('/img/chyjicebox/shrink.png');
 }
 #chyjicebox-wrapper > button#chyjicebox-prev,
 #chyjicebox-wrapper > button#chyjicebox-next {
