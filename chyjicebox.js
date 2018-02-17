@@ -1,11 +1,11 @@
 /**
- * Hlavní změny oproti verzi 2: podpora videí, předěláno centrování obrázků
- * Částečně hotovo už pro verzi na taiwan-fotky, kde ale je odstraněna podpora pro pdf a samostatné obrázky
- * Zde se vše schází v jednom
  * @requires chyjicebox.css
- * v3.0 - 27.12.2015
- * v3.0.1 - 20.7.2016 - refactor
- * v3.1 - 7.9.2016 - removed BrowserDetect
+ * @requires jquery.js
+ * v3.0 - 2015/12/27 - video support,reworked image centering
+ * v3.0.1 - 2016/7/10 - changes in displaying time and GPS
+ * v3.0.2 - 2016/7/20 - refactoring
+ * v3.0.3 - 2016/9/5 - fixed displaying data and coordinates
+ * v3.1 - 2016/9/6 - removed BrowserDetect
  */
 "use strict";
 var ChyjiceBox;
@@ -21,8 +21,6 @@ $(document).ready(function() {
 		var notFoundW = 200, notFoundH = 50;
 		// povolené formáty
 		var formats = ["gif", "jpg", "jpeg", "png", "pdf", "webm"];
-		// velikost okraje; barva okraje; minimální odsazení shora; zleva
-		var borderSize = 8, borderColor = "white", topSpace = 10, leftSpace = 4;
 		// rozměry a pořadí aktuálního obrázku
 		var imgw = 0, imgh = 0, currentImageOrder = 0;
 		// více obrázků; první obrázek; probíhá načítání; nalezen obrázek; zavřené okno; směr přednáčítání
@@ -33,21 +31,25 @@ $(document).ready(function() {
 		var showedImage = null;
 		// pole obrázků se stejným identifikátorem
 		var images = [];
-		
-		function MyImage(href, title, type) {
+		// listeners
+		var keyListenerName = "keydown.chyjicebox-keypress";
+
+		function MyImage(href, title, type, date, lat, longt) {
 			this.href = href;
 			this.title = title;
 			this.type = type;//"vid", "pic"
 			this.loaded = false;
+			this.date = date;
+			this.lat = lat;
+			this.longt = longt;
 		}
 
 		/** Vytvoření základních prvků */
 		body.append('<div id="'+a+'-wrapper"></div>');
 		var wrapper = $("#"+a+"-wrapper");
-		
+
 		wrapper.append('<div id="'+a+'"></div>');
 		var box = $("#"+a);
-		box.css("border-color", borderColor);
 
 		wrapper.append('<div id="'+a+'-overlay"></div>');
 		var overlay = $('#'+a+'-overlay');
@@ -67,8 +69,8 @@ $(document).ready(function() {
 		wrapper.append('<button id="'+a+'-next" type="button" title="Další">▷</button>');
 		var nextDiv = $('#'+a+'-next');
 
-		wrapper.append('<button id="'+a+'-close" title="Zavřít">✕</div>');
-		var closebutton = $('#'+a+'-close');
+		wrapper.append('<button id="'+a+'-close" title="Zavřít">✕</button>');
+		var closeButton = $('#'+a+'-close');
 		
 		wrapper.append('<a id="newtab" href="" onclick="window.open(this.href); return false;">Otevřít ve vlastním okně</a>');
 		var newtab = $('#newtab');
@@ -77,27 +79,28 @@ $(document).ready(function() {
 		var iframe = $('#'+a+'-iframe');
 
 		/**
-		 * Otevření lightboxu
+		 * Open lightbox
 		 */
 		function open() {
 			wrapper.show();
-			if (fitToScreen || isPDF) {//velké dokumenty nechat scrolovat
+			if (fitToScreen || isPDF) { // let big documents (PDFs) scroll
 				var tempW = html.innerWidth();
 				html.css("overflow", "hidden");
-				//řeší různé šířky scrollbarů a například sitauce, kdy je scrollbar už schovaný
+				// scrollbar can have different width on different devices and browsers
+				// sometimes it can be hidden by some extension
 				tempW = html.innerWidth() - tempW;
 				body.css("padding-right", tempW + "px");
 			}
 			overlay.fadeIn(200, function() {
-				var pom = isPDF ? iframe : box;
-				pom.fadeIn(100, function() {
+				var el = isPDF ? iframe : box;
+				el.fadeIn(100, function() {
 					overlay.css("height", doc.height());
 				});
 			});
 		}
 		
 		/**
-		 * Uzavření ligthboxu
+		 * Close ligtbox
 		 */
 		var close = function() {
 			removeKeyListener();
@@ -117,17 +120,8 @@ $(document).ready(function() {
 			});
 		};
 		loading.click(close);
-		closebutton.click(close);
+		closeButton.click(close);
 		overlay.click(close);
-		
-		/**
-		 * Odsazení odshora, pokud není nalezeno -> 40%
-		 * @param  {number} a výška okna
-		 * @return {number}   horní odasazení
-		 */
-		function notFountTop(a) {	
-			return doc.scrollTop()+2*a/5;
-		}
 
 		/**
 		 * Animace změny lightboxu
@@ -144,25 +138,24 @@ $(document).ready(function() {
 			neww = Math.round(neww);
 			newh = Math.round(newh);
 			top = Math.round(top);
-			var boxl = Math.round((winw-neww)/2 - borderSize);
+			var boxl = Math.round((winw-neww)/2);
 			if (boxl < 0) boxl = 0;
-			var titlew = Math.round(neww-2*borderSize-4);
+			var titlew = Math.round(neww-4);
 			// pokud nedojde ke změně rozměrů, tak vypnout animaci
-			if (box.css("width") == neww+"px" &&
-					box.css("height") == newh+"px" &&
-					box.css("top") == top+"px" &&
-					box.css("left") == boxl+"px") {
+			if (box.css("width") === neww+"px" &&
+					box.css("height") === newh+"px" &&
+					box.css("top") === top+"px" &&
+					box.css("left") === boxl+"px") {
 				time = 0;
 				fadeTime = 0;
 			}
 			imgbox.fadeOut(fadeTime, function() {
 				if (showedImage.title !== undefined) {
-					var t = (multi) ? "Obrázek "+(currentImageOrder+1)+"/"+images.length+"&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;" : "";
-					title.html(t+showedImage.title);
+					title.html(getTitle());
 					title.animate({
 						width: titlew
 					}, time);
-					if (title.css("display") == "none" && isFound) {
+					if (title.css("display") === "none" && isFound) {
 						title.fadeIn(time);
 					}
 				} else {
@@ -177,7 +170,7 @@ $(document).ready(function() {
 					left: boxl
 				}, time, function() {
 					var content;
-					if (showedImage.type == "pic") {
+					if (showedImage.type === "pic") {
 						content = (isFound) ? ('<img src="'+showedImage.href+'" width="'+neww+'px" height="'+newh+'px">') : notFoundMessage;
 					} else {
 						content = '<video width="'+neww+'px" src="'+showedImage.href+'" controls></video>';
@@ -188,7 +181,22 @@ $(document).ready(function() {
 				});
 			});
 		}
-		
+
+		function getTitle() {
+			var space = "&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;";
+			var t = (multi) ? "Fotka " + (currentImageOrder+1) + "/" + images.length : "";
+			if (showedImage.date !== undefined) {
+				t += space + showedImage.date;
+			}
+
+			if (showedImage.lat != "" && showedImage.lat !== undefined) {
+				var map = '<a href="https://maps.google.com?q=' + showedImage.lat + ',' + showedImage.longt + '">Mapa</a>';
+				t += space + map;
+			}
+			t += space + showedImage.title;
+			return t;
+		}
+
 		/**
 		 * Po načtení obrázku dojde k určení nových rozměrů lightboxu
 		 * Voláno z metody loadImg
@@ -198,7 +206,7 @@ $(document).ready(function() {
 			loading.hide();
 
 			var neww, newh;
-			if (showedImage.type == "pic") {
+			if (showedImage.type === "pic") {
 				title.removeClass("top");
 				isFound = (typeof img === "object");
 
@@ -223,19 +231,19 @@ $(document).ready(function() {
 				title.css("display", "none");
 				animateChangeImg(neww, newh, winw, notFountTop(winh));
 			}
-			
+
 			prevDiv.css("display", (currentImageOrder > 0 && multi) ? "block" : "none");
 			nextDiv.css("display", (currentImageOrder < (images.length - 1) && multi) ? "block" : "none");
 			overlay.css("height", doc.height());
 		}
-		
+
 		/**
 		 * Načtení obrázku, tady všechno začíná
 		 * Volaná kliknutím na náhled fotky, nebo z loadPrevImg a loadNextImg
 		 * Volá se odsud různými způsoby metoda show a přednačtení obrázků
 		 */
 		function loadImg() {
-			if (showedImage.type == "pic") {
+			if (showedImage.type === "pic") {
 				if (!showedImage.loaded) {
 					loading.show();
 				}
@@ -262,16 +270,25 @@ $(document).ready(function() {
 		}
 
 		/**
+		 * Odsazení odshora, pokud není nalezeno -> 40%
+		 * @param  {number} a výška okna
+		 * @return {number}   horní odasazení
+		 */
+		function notFountTop(a) {
+			return doc.scrollTop()+2*a/5;
+		}
+
+		/**
 		 * Přednačítání obrázků
 		 * Voláno z metody loadImg
 		 * @param  {number} x číslo, které vyjadřuje pořadí obrázku pro přednačtení
 		 */
 		function preloadImg(x) {
-			var smer = (loadNext) ? x : -x;
-			var pom = currentImageOrder + smer;
-			if (currentImageOrder + smer < 0) pom = 0;
-			else if (currentImageOrder + smer > images.length - 1) pom = images.length-1;
-			var x1 = images[pom];
+			var direction = (loadNext) ? x : -x;
+			var temp = currentImageOrder + direction;
+			if (currentImageOrder + direction < 0) temp = 0;
+			else if (currentImageOrder + direction > images.length - 1) temp = images.length-1;
+			var x1 = images[temp];
 			if (!x1.loaded && x1.type != "vid") {
 				var img = new Image();
 				img.onload = function() {
@@ -281,7 +298,7 @@ $(document).ready(function() {
 				//img.src = "http://www.chyjice.wz.cz"+x1.href;
 			}
 		}
-		
+
 		/**
 		 * Přesun na předchozí/další fotku
 		 * Voláno z kliknutí na šipky nebo listeneru
@@ -290,7 +307,7 @@ $(document).ready(function() {
 			if (!isLoading && currentImageOrder > 0 && multi) {
 				showedImage = images[--currentImageOrder];
 				loadNext = first = false;
-				loadImg();	
+				loadImg();
 			}
 		}
 		function loadNextImg() {
@@ -301,7 +318,7 @@ $(document).ready(function() {
 				loadImg();
 			}
 		}
-		
+
 		prevDiv.click(function() {
 			loadPrevImg();
 		});
@@ -323,29 +340,28 @@ $(document).ready(function() {
 				if ($.inArray(format, formats) != -1) {
 					var group = el.attr("data-chyjicebox");
 					var title = el.children().attr("alt");
+					var date = el.attr("data-date");
+					var lat = el.attr("data-lat");
+					var longt = el.attr("data-long");
 
 					var ii = 0;//pořadí obrázku; když se otevírá lightbox, tak hned vím, kde jsem
 					if (group != "") {
 						ii = currentImageOrder++;
 					}
 
-					var ab;
-					if (format == "webm") {
-						ab = new MyImage(href, title, "vid");
-					} else {
-						ab = new MyImage(href, title, "pic");
-					}
+					var type = (format === "webm") ? "vid" : "pic";
+					var ab = new MyImage(href, title, type, date, lat, longt);
 
 					if (group != "" && format != "pdf") images.push(ab);
 					/** událost na načtení obrázku */
 					el.click(function(e) {
-						if (e.button == 1) {
+						if (e.button === 1) {
 							return true; // povolit rozklinutí kolečkem do nového panelu
 						}
-						if (group == "") {
+						if (group === "") {
 							fitToScreen = el.attr("data-fittoscreen") !== undefined;
 						}
-						isPDF = (format == "pdf");
+						isPDF = (format === "pdf");
 						if (isPDF) {
 							iframe.attr("src", href);
 							//iframe.attr("src", "http://www.chyjice.wz.cz"+href);
@@ -354,7 +370,7 @@ $(document).ready(function() {
 							open();
 						} else {
 							newtab.hide();
-							multi = (group != "");
+							multi = (group !== "");
 							if (multi) imgbox.addClass("cursorpointer");
 							else imgbox.removeClass("cursorpointer");
 							first = true;
@@ -389,27 +405,25 @@ $(document).ready(function() {
 		function computeLightboxSize(winw, winh) {
 			var newh = imgh,
 				neww = imgw,
-				upDownSpace = (winh < 600) ? (2 * borderSize) : (2 * (topSpace + borderSize)),
-				leftRightSpace = (winw < 800) ? (2 * borderSize) :  2 * (leftSpace + borderSize),
 				changeH = false,//nevejde se na výšku
 				changeW = false;//nevejde se na šířku
 			// přepočet pro menší obrázek, zachování poměrů
-			if (fitToScreen && newh + upDownSpace > winh) {
-				newh = winh - upDownSpace;
+			if (fitToScreen && newh > winh) {
+				newh = winh;
 				neww = imgw * newh / imgh;
 				changeH = true;
 			}
-			if (fitToScreen && neww + leftRightSpace > winw) {
-				neww = winw - leftRightSpace;
+			if (fitToScreen && neww > winw) {
+				neww = winw;
 				newh = imgh * neww / imgw;
 				changeW = true;
 			}
 			//malý obrázek vycentrovat
-			var top = (winh < 600) ? 0 : topSpace;
+			var top = 0;
 			if (fitToScreen && (changeW  || (!changeW && !changeH))) {
 				//když se nevejde na šířku, tak spočítat horní odsazení
 				//když nedošlo ke změně rozměrů, tak zbylo volné místo, takže dopočítat horní odsazení
-				top = (winh - (newh + 2 * borderSize)) / 2;
+				top = (winh - newh) / 2;
 			}
 
 			return [neww, newh, top];
@@ -417,6 +431,7 @@ $(document).ready(function() {
 
 		/** Resize Listener */
 		var canResize = true;
+		var resizeTimer = null;
 		var refreshWindow = function() {
 			canResize = true;
 			var winw = $(window).width(),
@@ -430,10 +445,10 @@ $(document).ready(function() {
 				width: (isFound) ? neww : notFoundW,
 				height: (isFound) ? newh : notFoundH,
 				top: (isFound) ? doc.scrollTop()+top : notFountTop(winh),
-				left: (winw-neww)/2 - borderSize
+				left: (winw-neww)/2
 			}, time);
 			title.animate({
-				width: neww-2*borderSize-4
+				width: neww-4
 			}, time);
 			imgbox.children().animate({
 				width: neww,
@@ -442,7 +457,6 @@ $(document).ready(function() {
 
 			overlay.css("height", doc.height());
 		};
-		var resizeTimer = null;
 		$(window).resize(function() {
 			if (canResize) {
 				canResize = false;
@@ -454,8 +468,8 @@ $(document).ready(function() {
 		/** MouseWheel Listener */
 		function wheel(e) {
 			if (multi) {
-				// IE doesn't know wheelDelta
-				var down = (signum(e.originalEvent.wheelDeltaY || -e.detail) < 0);
+				// IE doesn't know wheelDeltaX and wheelDeltaY
+				var down = (signum(e.originalEvent.wheelDelta || -e.detail) < 0);
 				if (down) loadNextImg();
 				else loadPrevImg();
 			    e.preventDefault();
@@ -470,17 +484,17 @@ $(document).ready(function() {
 
 		/** Key Listener */
 		function removeKeyListener() {
-			doc.unbind("keydown.chyjicebox-keypress");
+			doc.unbind(keyListenerName);
 		}
 
 		function addKeyListener() {
-			doc.bind("keydown.chyjicebox-keypress", function(e) {
+			doc.bind(keyListenerName, function(e) {
 				var specialKey = (e.ctrlKey || e.shiftKey || e.altKey);
 				switch (e.which) {
 					case 32: /* mezerník */
-							if (showedImage.type == "vid") {
+							if (showedImage.type === "vid") {
 								var vid = $("#imgbox video")[0];
-								if (vid.paused) vid.play(); 
+								if (vid.paused) vid.play();
 								else vid.pause();
 								e.preventDefault();
 							}
@@ -499,7 +513,7 @@ $(document).ready(function() {
 								e.preventDefault();
 								return false;
 							}
-							else if ((e.shiftKey ^ e.ctrlKey) && e.which == 37 && showedImage.type == "vid") {
+							else if ((e.shiftKey ^ e.ctrlKey) && e.which === 37 && showedImage.type === "vid") {
 								videoSeek(e.shiftKey ? -3 : -30);
 								e.preventDefault();
 							}
@@ -514,7 +528,7 @@ $(document).ready(function() {
 								e.preventDefault();
 								return false;
 							}
-							else if ((e.shiftKey ^ e.ctrlKey) && e.which == 39 && showedImage.type == "vid") {
+							else if ((e.shiftKey ^ e.ctrlKey) && e.which === 39 && showedImage.type === "vid") {
 								videoSeek(e.shiftKey ? 3 : 30);
 								e.preventDefault();
 							}
@@ -537,9 +551,8 @@ $(document).ready(function() {
 				vid.currentTime = seekToTime;
 			}
 		}
-		
-		/** Přednačtení ikon */ 
-		(function() {
+		/** Preload icons */
+		(function initIcons() {
 			var img1 = new Image();
 			img1.src = "/img/chyjicebox/loading.gif";
 			var img2 = new Image();
@@ -553,9 +566,7 @@ $(document).ready(function() {
 		return {
 			init:function(a) {
 				//u fotek bude fittoscreen, u archivu jen na vyžádání u položek
-				fitToScreen = (a == "archiv") ? false : true;//rozepsáno pro lepší čitelnost
-				borderColor = (a == "archiv") ? "#909090" : "white";//výchozí je bílá, v archivu šedá
-				box.css("border-color", borderColor);
+				fitToScreen = (a === "archiv") ? false : true;//rozepsáno pro lepší čitelnost
 				prepareLightbox();
 			},
 			clean:function() {
