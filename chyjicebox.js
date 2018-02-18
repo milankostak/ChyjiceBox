@@ -341,7 +341,13 @@ $(document).ready(function() {
 
 	prevDiv.click(loadPrevImg);
 	nextDiv.click(loadNextImg);
-	imgbox.click(loadNextImg);
+	imgbox.click(function() {
+		// block click on playing video
+		var video = getVideo();
+		if (showedImage.type !== Types.VIDEO || video.currentTime === 0 || video.paused) {
+			loadNextImg();
+		}
+	});
 
 	/**
 	 * Init function. Creates events for marked links and prepares array with images
@@ -567,7 +573,7 @@ $(document).ready(function() {
 	 * @param  {number} change relative change in seconds
 	 */
 	function videoSeek(change) {
-		var vid = $("#imgbox video")[0];
+		var vid = getVideo();
 		var seekToTime = vid.currentTime + change;
 		if (seekToTime < 0) {
 			vid.currentTime = 0;
@@ -576,6 +582,14 @@ $(document).ready(function() {
 		} else {
 			vid.currentTime = seekToTime;
 		}
+	}
+
+	/**
+	 * Getter for video element
+	 * @return {HTMLVideoElement}
+	 */
+	function getVideo() {
+		return $("#imgbox video")[0];
 	}
 
 	/**
