@@ -518,7 +518,7 @@ $(document).ready(function() {
 			switch (e.which) {
 				case 32: /* space */
 						if (showedImage.type === Types.VIDEO) {
-							var vid = $("#imgbox video")[0];
+							var vid = getVideo();
 							if (vid.paused) vid.play();
 							else vid.pause();
 							e.preventDefault();
@@ -589,7 +589,7 @@ $(document).ready(function() {
 	 * @return {HTMLVideoElement}
 	 */
 	function getVideo() {
-		return $("#imgbox video")[0];
+		return $("#chyjicebox > #imgbox video")[0];
 	}
 
 	/**
