@@ -35,11 +35,15 @@ $(document).ready(function() {
 	var images = [];
 	// listeners names
 	var keyListenerName = "keydown.chyjicebox-keypress";
+	// content type
+	var Types = {};
+	Types.IMAGE = 1;
+	Types.VIDEO = 2;
 
 	function MyImage(href, title, type, date, lat, longt) {
 		this.href = href;
 		this.title = title;
-		this.type = type;//"vid", "pic"
+		this.type = type;
 		this.loaded = false;
 		this.date = date;
 		this.lat = lat;
@@ -183,7 +187,7 @@ $(document).ready(function() {
 				left: boxl
 			}, time, function() {
 				var content;
-				if (showedImage.type === "pic") {
+				if (showedImage.type === Types.IMAGE) {
 					content = (isFound) ? ('<img src="'+showedImage.href+'" width="'+newWidth+'px" height="'+newHeight+'px">') : notFoundMessage;
 				} else {
 					content = '<video width="'+newWidth+'px" src="'+showedImage.href+'" controls></video>';
@@ -223,7 +227,7 @@ $(document).ready(function() {
 		loading.hide();
 
 		var newWidth, newHeight;
-		if (showedImage.type === "pic") {
+		if (showedImage.type === Types.IMAGE) {
 			title.removeClass("top");
 			isFound = (typeof img === "object");
 
@@ -257,7 +261,7 @@ $(document).ready(function() {
 	 * Volá se odsud různými způsoby metoda show a přednačtení obrázků
 	 */
 	function loadImg() {
-		if (showedImage.type === "pic") {
+		if (showedImage.type === Types.IMAGE) {
 			if (!showedImage.loaded) {
 				loading.show();
 			}
@@ -305,7 +309,7 @@ $(document).ready(function() {
 		else if (currentImageOrder + direction > images.length - 1) temp = images.length-1;
 
 		var x1 = images[temp];
-		if (!x1.loaded && x1.type !== "vid") {
+		if (!x1.loaded && x1.type !== Types.VIDEO) {
 			var img = new Image();
 			img.onload = function() {
 				x1.loaded = true;
@@ -360,7 +364,7 @@ $(document).ready(function() {
 					ii = currentImageOrder++;
 				}
 
-				var type = (format === "webm") ? "vid" : "pic";
+				var type = (format === "webm") ? Types.VIDEO : Types.IMAGE;
 				var ab = new MyImage(href, title, type, date, lat, longt);
 
 				if (group !== "" && format !== "pdf") images.push(ab);
@@ -507,7 +511,7 @@ $(document).ready(function() {
 			var specialKey = (e.ctrlKey || e.shiftKey || e.altKey);
 			switch (e.which) {
 				case 32: /* space */
-						if (showedImage.type === "vid") {
+						if (showedImage.type === Types.VIDEO) {
 							var vid = $("#imgbox video")[0];
 							if (vid.paused) vid.play();
 							else vid.pause();
@@ -528,7 +532,7 @@ $(document).ready(function() {
 							e.preventDefault();
 							return false;
 						}
-						else if ((e.shiftKey ^ e.ctrlKey) && e.which === 37 && showedImage.type === "vid") {
+						else if ((e.shiftKey ^ e.ctrlKey) && e.which === 37 && showedImage.type === Types.VIDEO) {
 							videoSeek(e.shiftKey ? -3 : -30);
 							e.preventDefault();
 						}
@@ -543,7 +547,7 @@ $(document).ready(function() {
 							e.preventDefault();
 							return false;
 						}
-						else if ((e.shiftKey ^ e.ctrlKey) && e.which === 39 && showedImage.type === "vid") {
+						else if ((e.shiftKey ^ e.ctrlKey) && e.which === 39 && showedImage.type === Types.VIDEO) {
 							videoSeek(e.shiftKey ? 3 : 30);
 							e.preventDefault();
 						}
