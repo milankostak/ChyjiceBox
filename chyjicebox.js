@@ -6,7 +6,7 @@
  * v3.0.2 - 2016/7/20 - refactoring
  * v3.0.3 - 2016/9/5 - fixed displaying data and coordinates
  * v3.1 - 2016/9/6 - removed BrowserDetect
- * v4.0 alpha - 2/2018  - redesigned, no border, support for full-screen(, support for swipe), translated
+ * v4.0 alpha - 3/2018  - redesigned, no border, support for full-screen(, support for swipe), translated
  */
 "use strict";
 var ChyjiceBox;
@@ -95,7 +95,7 @@ $(document).ready(function() {
 	/////////
 
 	/**
-	 * Init function. Creates events for marked links and prepares array with images
+	 * Main initialization function. Creates events for marked links and prepares array with images
 	 */
 	function prepareLightbox() {
 		$("[data-chyjicebox]").each(function() {
@@ -131,7 +131,6 @@ $(document).ready(function() {
 					isPDF = (format === "pdf");
 					if (isPDF) {
 						iframe.attr("src", href);
-						//iframe.attr("src", "http://www.chyjice.wz.cz"+href);
 						newtab.attr("href", href);
 						newtab.show();
 						open();
@@ -154,9 +153,9 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * Načtení obrázku, tady všechno začíná
-	 * Volaná kliknutím na náhled fotky, nebo z loadPrevImg a loadNextImg
-	 * Volá se odsud různými způsoby metoda show a přednačtení obrázků
+	 * Load image. Everything starts here.
+	 * Method is called from click on the image thumb or from loadPrevImg() and loadNextImg()
+	 * This method calls show() and picture preloading
 	 */
 	function loadImg() {
 		if (showedImage.type === Types.IMAGE) {
@@ -179,15 +178,14 @@ $(document).ready(function() {
 			};
 			isLoading = true;
 			img.src = showedImage.href;
-			//img.src = "http://www.chyjice.wz.cz"+showedImage.href;
 		} else {
 			show();
 		}
 	}
 
 	/**
-	 * Po načtení obrázku dojde k určení nových rozměrů lightboxu
-	 * Voláno z metody loadImg
+	 * After the image is loaded, this methods opens the box and obtains its dimensions.
+	 * Called from loadImg()
 	 * @param  {various} img object/false/empty
 	 */
 	function show(img) {
@@ -401,7 +399,6 @@ $(document).ready(function() {
 				x1.loaded = true;
 			};
 			img.src = x1.href;
-			//img.src = "http://www.chyjice.wz.cz"+x1.href;
 		}
 	}
 
@@ -458,8 +455,8 @@ $(document).ready(function() {
 	/**
 	 * Resize listener support
 	 */
-	var canResize = true;
-	var resizeTimer = null;
+	var canResize = true,
+		resizeTimer = null;
 	function refreshWindow() {
 		canResize = true;
 		var windowWidth = $(window).width(),
@@ -483,7 +480,7 @@ $(document).ready(function() {
 		}, time);
 
 		overlay.css("height", doc.height());
-	};
+	}
 	$(window).resize(function() {
 		if (canResize) {
 			canResize = false;
