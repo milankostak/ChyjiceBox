@@ -1,12 +1,12 @@
 /**
  * @requires chyjicebox.css
  * @requires jquery.js
- * v3.0 - 2015/12/27 - video support,reworked image centering
+ * v3.0 - 2015/12/27 - video support, reworked image centering
  * v3.0.1 - 2016/7/10 - changes in displaying time and GPS
  * v3.0.2 - 2016/7/20 - refactoring
  * v3.0.3 - 2016/9/5 - fixed displaying data and coordinates
  * v3.1 - 2016/9/6 - removed BrowserDetect
- * v4.0 alpha - 2/2018  - reworked design, no border, support for full-screen(, support for swipe), translated
+ * v4.0 alpha - 2/2018  - redesigned, no border, support for full-screen(, support for swipe), translated
  */
 "use strict";
 var ChyjiceBox;
@@ -90,12 +90,144 @@ $(document).ready(function() {
 	wrapper.append('<iframe id="'+a+'-iframe" src=""></iframe>');
 	var iframe = $('#'+a+'-iframe');
 
+	/////////
+	/// FUNCTIONS
+	/////////
+
+	/**
+	 * Init function. Creates events for marked links and prepares array with images
+	 */
+	function prepareLightbox() {
+		$("[data-chyjicebox]").each(function() {
+			var el = $(this);
+			var href = el.attr("href");
+			var format = href.toLowerCase().split(".")[href.toLowerCase().split(".").length - 1];
+			if ($.inArray(format, formats) !== -1) {
+				var group = el.attr("data-chyjicebox");
+				var title = el.children().attr("alt");
+				var date = el.attr("data-date");
+				var lat = el.attr("data-lat");
+				var longt = el.attr("data-long");
+
+				// order of image when lightbox is opened to know it immediately
+				var ii = 0;
+				if (group !== "") {
+					ii = currentImageOrder++;
+				}
+
+				var type = (format === "webm") ? Types.VIDEO : Types.IMAGE;
+				var ab = new MyImage(href, title, type, date, lat, longt);
+
+				if (group !== "" && format !== "pdf") images.push(ab);
+				// when thumb image or link is clicked show the image
+				el.click(function(e) {
+					if (e.button === 1) {
+						// allow clicking with mouse wheel to open in a new panel
+						return true;
+					}
+					if (group === "") {
+						fitToScreen = el.attr("data-fittoscreen") !== undefined;
+					}
+					isPDF = (format === "pdf");
+					if (isPDF) {
+						iframe.attr("src", href);
+						//iframe.attr("src", "http://www.chyjice.wz.cz"+href);
+						newtab.attr("href", href);
+						newtab.show();
+						open();
+					} else {
+						newtab.hide();
+						multi = (group !== "");
+						if (multi) imgbox.addClass("cursorpointer");
+						else imgbox.removeClass("cursorpointer");
+						first = true;
+						isClosed = false;
+						showedImage = ab;
+						currentImageOrder = ii;
+						addKeyListener();
+						loadImg();
+					}
+					return false;
+				});
+			}
+		});
+	}
+
+	/**
+	 * Načtení obrázku, tady všechno začíná
+	 * Volaná kliknutím na náhled fotky, nebo z loadPrevImg a loadNextImg
+	 * Volá se odsud různými způsoby metoda show a přednačtení obrázků
+	 */
+	function loadImg() {
+		if (showedImage.type === Types.IMAGE) {
+			if (!showedImage.loaded) {
+				loading.show();
+			}
+			var img = new Image();
+			img.onload = function() {
+				showedImage.loaded = true;
+				if (!isClosed) {
+					show(this);
+					for (var j = 1; multi && j <= preloadedImages; j++) preloadImg(j);
+				}
+			};
+			img.onerror = function() {
+				showedImage.loaded = true;
+				if (!isClosed) {
+					show(false);
+				}
+			};
+			isLoading = true;
+			img.src = showedImage.href;
+			//img.src = "http://www.chyjice.wz.cz"+showedImage.href;
+		} else {
+			show();
+		}
+	}
+
+	/**
+	 * Po načtení obrázku dojde k určení nových rozměrů lightboxu
+	 * Voláno z metody loadImg
+	 * @param  {various} img object/false/empty
+	 */
+	function show(img) {
+		loading.hide();
+
+		var newWidth, newHeight;
+		if (showedImage.type === Types.IMAGE) {
+			title.removeClass("top");
+			isFound = (typeof img === "object");
+
+			newWidth = imgw = (isFound) ? img.width : notFoundW;
+			newHeight = imgh = (isFound) ? img.height : notFoundH;
+		} else {
+			title.addClass("top");
+			isFound = true;
+			newWidth = imgw = 1920;
+			newHeight = imgh = 1080;
+		}
+
+		if (first) open();
+
+		if (isFound) {
+			var data = computeLightboxSize();
+			animateChangeImg(data[0], data[1], doc.scrollTop() + data[2]);
+		} else {
+			title.css("display", "none");
+			animateChangeImg(newWidth, newHeight, notFountTop());
+		}
+
+		prevDiv.css("display", (currentImageOrder > 0 && multi) ? "block" : "none");
+		nextDiv.css("display", (currentImageOrder < (images.length - 1) && multi) ? "block" : "none");
+		overlay.css("height", doc.height());
+	}
+
 	/**
 	 * Open lightbox
 	 */
 	function open() {
 		wrapper.show();
-		if (fitToScreen || isPDF) { // let big documents (PDFs) scroll
+		if (fitToScreen || isPDF) { // let big documents (and PDFs) scroll
 			var tempW = html.innerWidth();
 			html.css("overflow", "hidden");
 			// scrollbar can have different width on different devices and browsers
@@ -136,6 +268,39 @@ $(document).ready(function() {
 	loading.click(close);
 	closeButton.click(close);
 	overlay.click(close);
+
+	/**
+	 * Compute dimensions of lightbox
+	 * @return {Array} array with dimensions - width and height of lightbox and top space
+	 */
+	function computeLightboxSize() {
+		var windowWidth = $(window).width(),
+			windowHeight = $(window).height(),
+			newWidth = imgw,
+			newHeight = imgh,
+			changeH = false,//cannot fit in height
+			changeW = false;//cannot fit in width
+		// conversion for smaller image, preserve image ratio
+		if (fitToScreen && newHeight > windowHeight) {
+			newHeight = windowHeight;
+			newWidth = imgw * newHeight / imgh;
+			changeH = true;
+		}
+		if (fitToScreen && newWidth > windowWidth) {
+			newWidth = windowWidth;
+			newHeight = imgh * newWidth / imgw;
+			changeW = true;
+		}
+		// small image has to be centered
+		var top = 0;
+		if (fitToScreen && (changeW  || (!changeW && !changeH))) {
+			// if the image does not fit in width then calculate top space
+			// if there was not any change in dimensions then there is free space so it is necessary to calculate top space
+			top = (windowHeight - newHeight) / 2;
+		}
+
+		return [newWidth, newHeight, top];
+	}
 
 	/**
 	 * Animate change in lightbox dimensions
@@ -219,85 +384,6 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * Po načtení obrázku dojde k určení nových rozměrů lightboxu
-	 * Voláno z metody loadImg
-	 * @param  {various} img object/false/empty
-	 */
-	function show(img) {
-		loading.hide();
-
-		var newWidth, newHeight;
-		if (showedImage.type === Types.IMAGE) {
-			title.removeClass("top");
-			isFound = (typeof img === "object");
-
-			newWidth = imgw = (isFound) ? img.width : notFoundW;
-			newHeight = imgh = (isFound) ? img.height : notFoundH;
-		} else {
-			title.addClass("top");
-			isFound = true;
-			newWidth = imgw = 1920;
-			newHeight = imgh = 1080;
-		}
-
-		if (first) open();
-
-		if (isFound) {
-			var data = computeLightboxSize();
-			animateChangeImg(data[0], data[1], doc.scrollTop() + data[2]);
-		} else {
-			title.css("display", "none");
-			animateChangeImg(newWidth, newHeight, notFountTop());
-		}
-
-		prevDiv.css("display", (currentImageOrder > 0 && multi) ? "block" : "none");
-		nextDiv.css("display", (currentImageOrder < (images.length - 1) && multi) ? "block" : "none");
-		overlay.css("height", doc.height());
-	}
-
-	/**
-	 * Načtení obrázku, tady všechno začíná
-	 * Volaná kliknutím na náhled fotky, nebo z loadPrevImg a loadNextImg
-	 * Volá se odsud různými způsoby metoda show a přednačtení obrázků
-	 */
-	function loadImg() {
-		if (showedImage.type === Types.IMAGE) {
-			if (!showedImage.loaded) {
-				loading.show();
-			}
-			var img = new Image();
-			img.onload = function() {
-				showedImage.loaded = true;
-				if (!isClosed) {
-					show(this);
-					for (var j = 1; multi && j <= preloadedImages; j++) preloadImg(j);
-				}
-			};
-			img.onerror = function() {
-				showedImage.loaded = true;
-				if (!isClosed) {
-					show(false);
-				}
-			};
-			isLoading = true;
-			img.src = showedImage.href;
-			//img.src = "http://www.chyjice.wz.cz"+showedImage.href;
-		} else {
-			show();
-		}
-	}
-
-	/**
-	 * Space from top if image not found - make it 40%
-	 * @return {number}   top space
-	 */
-	function notFountTop() {
-		var windowHeight = $(window).height();
-		var windowHeight40Percent = 2 * windowHeight / 5;
-		return doc.scrollTop() + windowHeight40Percent;
-	}
-
-	/**
 	 * Images preloading. Called from loadImg()
 	 * @param  {number} x number that tells the order of images which is going to be preloaded
 	 */
@@ -350,65 +436,6 @@ $(document).ready(function() {
 	});
 
 	/**
-	 * Init function. Creates events for marked links and prepares array with images
-	 */
-	function prepareLightbox() {
-		$("[data-chyjicebox]").each(function() {
-			var el = $(this);
-			var href = el.attr("href");
-			var format = href.toLowerCase().split(".")[href.toLowerCase().split(".").length - 1];
-			if ($.inArray(format, formats) !== -1) {
-				var group = el.attr("data-chyjicebox");
-				var title = el.children().attr("alt");
-				var date = el.attr("data-date");
-				var lat = el.attr("data-lat");
-				var longt = el.attr("data-long");
-
-				// order of image when lightbox is opened to know it immediately
-				var ii = 0;
-				if (group !== "") {
-					ii = currentImageOrder++;
-				}
-
-				var type = (format === "webm") ? Types.VIDEO : Types.IMAGE;
-				var ab = new MyImage(href, title, type, date, lat, longt);
-
-				if (group !== "" && format !== "pdf") images.push(ab);
-				// when thumb image or link is clicked show the image
-				el.click(function(e) {
-					if (e.button === 1) {
-						// allow clicking with mouse wheel to open in a new panel
-						return true;
-					}
-					if (group === "") {
-						fitToScreen = el.attr("data-fittoscreen") !== undefined;
-					}
-					isPDF = (format === "pdf");
-					if (isPDF) {
-						iframe.attr("src", href);
-						//iframe.attr("src", "http://www.chyjice.wz.cz"+href);
-						newtab.attr("href", href);
-						newtab.show();
-						open();
-					} else {
-						newtab.hide();
-						multi = (group !== "");
-						if (multi) imgbox.addClass("cursorpointer");
-						else imgbox.removeClass("cursorpointer");
-						first = true;
-						isClosed = false;
-						showedImage = ab;
-						currentImageOrder = ii;
-						addKeyListener();
-						loadImg();
-					}
-					return false;
-				});
-			}
-		});
-	}
-
-	/**
 	 * Clean variables when moving to another gallery with AJAX
 	 */
 	function cleanLightbox() {
@@ -419,36 +446,13 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * Compute dimensions of lightbox
-	 * @return {Array} array with dimensions - width and height of lightbox and top space
+	 * Space from top if image not found - make it 40%
+	 * @return {number}   top space
 	 */
-	function computeLightboxSize() {
-		var windowWidth = $(window).width(),
-			windowHeight = $(window).height(),
-			newWidth = imgw,
-			newHeight = imgh,
-			changeH = false,//cannot fit in height
-			changeW = false;//cannot fit in width
-		// conversion for smaller image, preserve image ratio
-		if (fitToScreen && newHeight > windowHeight) {
-			newHeight = windowHeight;
-			newWidth = imgw * newHeight / imgh;
-			changeH = true;
-		}
-		if (fitToScreen && newWidth > windowWidth) {
-			newWidth = windowWidth;
-			newHeight = imgh * newWidth / imgw;
-			changeW = true;
-		}
-		// small image has to be centered
-		var top = 0;
-		if (fitToScreen && (changeW  || (!changeW && !changeH))) {
-			// if the image does not fit in width then calculate top space
-			// if there was not any change in dimensions then there is free space so it is necessary to calculate top space
-			top = (windowHeight - newHeight) / 2;
-		}
-
-		return [newWidth, newHeight, top];
+	function notFountTop() {
+		var windowHeight = $(window).height();
+		var windowHeight40Percent = 2 * windowHeight / 5;
+		return doc.scrollTop() + windowHeight40Percent;
 	}
 
 	/**
