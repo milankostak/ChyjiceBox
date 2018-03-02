@@ -6,7 +6,7 @@
  * v3.0.2 - 2016/7/20 - refactoring
  * v3.0.3 - 2016/9/5 - fixed displaying data and coordinates
  * v3.1 - 2016/9/6 - removed BrowserDetect
- * v4.0 alpha - 3/2018  - redesigned, no border, support for full-screen(, support for swipe), translated
+ * v4.0 alpha - 3/2018  - redesigned, no border, support for full-screen(, support for swipe), translated, controls hiding
  */
 "use strict";
 var ChyjiceBox;
@@ -27,6 +27,8 @@ $(document).ready(function() {
 	var multi = false, first = true, isLoading = false, isFound = true, isClosed = true, loadNext = true, isPDF = false;
 	// make images smaller to fit the screen size
 	var fitToScreen = true;
+	// if controls are hidden when keyboard is being used
+	var controlsHidden = false;
 	// how many images to preload
 	var preloadedImages = 2;
 	// information about current image
@@ -34,7 +36,8 @@ $(document).ready(function() {
 	// array of images width the same identifier
 	var images = [];
 	// listeners names
-	var keyListenerName = "keydown.chyjicebox-keypress";
+	var keyListenerName = "keydown.chyjicebox-keypress",
+		mouseMoveListenerName = "mousemove.chyjicebox-mousemove";
 	// content type
 	var Types = {};
 	Types.IMAGE = 1;
@@ -215,8 +218,11 @@ $(document).ready(function() {
 			animateChangeImg(newWidth, newHeight, notFountTop());
 		}
 
-		prevDiv.css("display", (currentImageOrder > 0 && multi) ? "block" : "none");
-		nextDiv.css("display", (currentImageOrder < (images.length - 1) && multi) ? "block" : "none");
+		// show only when controls are not hidden
+		if (!controlsHidden) {
+			prevDiv.css("display", (currentImageOrder > 0 && multi) ? "block" : "none");
+			nextDiv.css("display", (currentImageOrder < (images.length - 1) && multi) ? "block" : "none");
+		}
 		overlay.css("height", doc.height());
 	}
 
@@ -224,6 +230,7 @@ $(document).ready(function() {
 	 * Open lightbox
 	 */
 	function open() {
+		showControls();
 		wrapper.show();
 		if (fitToScreen || isPDF) { // let big documents (and PDFs) scroll
 			var tempW = html.innerWidth();
@@ -261,6 +268,7 @@ $(document).ready(function() {
 			imgbox.html("");
 			title.html("");
 			if (iframe.attr("src") !== "") iframe.attr("src", "");
+			showControls();
 		});
 	};
 	loading.click(close);
@@ -526,7 +534,8 @@ $(document).ready(function() {
 						}
 						return false;
 						//break;
-				case 27: close();
+				case 27: /* Esc */
+						 close();
 						 e.preventDefault();
 						 break;
 				case 87: /* w */
@@ -537,6 +546,7 @@ $(document).ready(function() {
 						if (!specialKey) {
 							loadPrevImg();
 							e.preventDefault();
+							hideControls();
 							return false;
 						}
 						else if ((e.shiftKey ^ e.ctrlKey) && e.which === 37 && showedImage.type === Types.VIDEO) {
@@ -552,6 +562,7 @@ $(document).ready(function() {
 						if (!specialKey) {
 							loadNextImg();
 							e.preventDefault();
+							hideControls();
 							return false;
 						}
 						else if ((e.shiftKey ^ e.ctrlKey) && e.which === 39 && showedImage.type === Types.VIDEO) {
@@ -567,6 +578,56 @@ $(document).ready(function() {
 						 e.preventDefault(); break;
 			}
 		});
+	}
+
+	/**
+	 * Hide controls when using keyboard for controlling
+	 */
+	function hideControls() {
+		if (controlsHidden) return;
+		controlsHidden = true;
+		addMouseMoveListener();
+		prevDiv.animate({left: '-150'}, 350, function() {
+			prevDiv.hide().css("left", 0);
+		});
+		nextDiv.animate({right: '-150'}, 350, function() {
+			nextDiv.hide().css("right", 0);
+		});
+		closeButton.animate({top: '-50'}, 350, function() {
+			closeButton.hide().css("top", 0);
+		});
+		fullScreenButton.animate({top: '-50'}, 350, function() {
+			fullScreenButton.hide().css("top", 0);
+		});
+	}
+
+	/**
+	 * Show the controls back
+	 */
+	function showControls() {
+		if (!controlsHidden) return;
+		controlsHidden = false;
+		if (currentImageOrder > 0 && multi) {
+			prevDiv.css("left", -150).show().animate({left: '0'}, 350);
+		}
+		if (currentImageOrder < (images.length - 1) && multi) {
+			nextDiv.css("right", -150).show().animate({right: '0'}, 350);
+		}
+		closeButton.css("top", -50).show().animate({top: '0'}, 350);
+		fullScreenButton.css("top", -50).show().animate({top: '0'}, 350);
+	}
+
+	/**
+	 * Manage mouse move listeners for showing controls back when mouse is moved
+	 */
+	function addMouseMoveListener() {
+		wrapper.bind(mouseMoveListenerName, function(e) {
+			showControls();
+			removeMouseMoveListener();
+		});
+	}
+	function removeMouseMoveListener() {
+		wrapper.unbind(mouseMoveListenerName);
 	}
 
 	/**
