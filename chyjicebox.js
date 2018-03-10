@@ -6,7 +6,7 @@
  * v3.0.2 - 2016/7/20 - refactoring
  * v3.0.3 - 2016/9/5 - fixed displaying data and coordinates
  * v3.1 - 2016/9/6 - removed BrowserDetect
- * v4.0 alpha - 3/2018  - redesigned, no border, support for full-screen(, support for swipe), translated, controls hiding
+ * v4.0 beta - 3/2018  - redesigned, no border, support for full-screen, support for swiping, translated, controls hiding
  */
 "use strict";
 var ChyjiceBox;
@@ -38,6 +38,10 @@ $(document).ready(function() {
 	// listeners names
 	var keyListenerName = "keydown.chyjicebox-keypress",
 		mouseMoveListenerName = "mousemove.chyjicebox-mousemove";
+	// variables for resizing, boolean for determining the state and timer for periodical check
+	var canResize = true, resizeTimer = null;
+	// variables for swiping between pictures
+	var touchStartX = null, touchStartY = null;
 	// content type
 	var Types = {};
 	Types.IMAGE = 1;
@@ -441,6 +445,34 @@ $(document).ready(function() {
 	});
 
 	/**
+	 * Swiping between pictures in mobile browsers
+	 */
+	wrapper.on('touchstart', function(e) {
+		touchStartX = e.touches[0].clientX;
+		touchStartY = e.touches[0].clientY;
+	});
+	wrapper.on('touchmove', function(e) {
+		if (!touchStartX || !touchStartY) {
+			return;
+		}
+
+		var touchMoveX = e.touches[0].clientX;
+		var touchMoveY = e.touches[0].clientY;
+
+		var xDiff = touchStartX - touchMoveX;
+		var yDiff = touchStartY - touchMoveY;
+
+		if (Math.abs(xDiff) > Math.abs(yDiff)) { // move to the side
+			if (xDiff > 0) loadNextImg();
+			else loadPrevImg();
+			hideControls();
+		}
+
+		touchStartX = null;
+		touchStartY = null;
+	});
+
+	/**
 	 * Clean variables when moving to another gallery with AJAX
 	 */
 	function cleanLightbox() {
@@ -463,8 +495,6 @@ $(document).ready(function() {
 	/**
 	 * Resize listener support
 	 */
-	var canResize = true,
-		resizeTimer = null;
 	function refreshWindow() {
 		canResize = true;
 		var windowWidth = $(window).width(),
