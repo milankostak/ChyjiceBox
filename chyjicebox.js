@@ -506,7 +506,7 @@ $(document).ready(function() {
 			var down = (signum(e.originalEvent.wheelDelta || -e.detail) < 0);
 			if (down) loadNextImg();
 			else loadPrevImg();
-		    e.preventDefault();
+			e.preventDefault();
 		}
 	}
 	function signum(x) {
@@ -667,6 +667,7 @@ $(document).ready(function() {
 						document.mozExitFullscreen ||
 						document.mozExitFullScreen ||
 						document.webkitExitFullscreen ||
+						document.mozCancelFullScreen ||
 						document.msExitFullscreen;
 
 	function toggleFullscreen() {
@@ -697,7 +698,7 @@ $(document).ready(function() {
 
 //loadPrevImg/loadNextImg/el.click -> loadImg -> show (computeLightboxSize) -> animateChangeImg
 //																		   (-> open)
-//					                          -> preloadImg
+//											  -> preloadImg
 
 	ChyjiceBox = {};
 
