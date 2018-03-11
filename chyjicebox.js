@@ -6,7 +6,7 @@
  * v3.0.2 - 2016/7/20 - refactoring
  * v3.0.3 - 2016/9/5 - fixed displaying data and coordinates
  * v3.1 - 2016/9/6 - removed BrowserDetect
- * v4.0 beta - 3/2018  - redesigned, no border, support for full-screen, support for swiping, translated, controls hiding
+ * v4.0 - 2018/3/11 - redesigned, no border, support for full-screen, support for swiping, translated, controls hiding
  */
 "use strict";
 var ChyjiceBox;
@@ -726,9 +726,9 @@ $(document).ready(function() {
 		img3.src = "/img/chyjicebox/shrink.png";
 	})();
 
-//loadPrevImg/loadNextImg/el.click -> loadImg -> show (computeLightboxSize) -> animateChangeImg
-//																		   (-> open)
-//											  -> preloadImg
+//loadPrevImg/loadNextImg/el.click/swipe -> loadImg -> show (computeLightboxSize) -> animateChangeImg
+//																				 (-> open)
+//													-> preloadImg
 
 	ChyjiceBox = {};
 
