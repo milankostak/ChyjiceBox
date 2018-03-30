@@ -7,6 +7,7 @@
  * v3.0.3 - 2016/9/5 - fixed displaying data and coordinates
  * v3.1 - 2016/9/6 - removed BrowserDetect
  * v4.0 - 2018/3/11 - redesigned, no border, support for full-screen, support for swiping, translated, controls hiding
+ * v4.0.1 - 2018/3/29 - fixed title width
  */
 "use strict";
 var ChyjiceBox;
@@ -31,6 +32,8 @@ $(document).ready(function() {
 	var controlsHidden = false;
 	// how many images to preload
 	var preloadedImages = 2;
+	// left and right padding of the title - taking into account when calculating width for content
+	var titlePadding = 20;
 	// information about current image
 	var showedImage = null;
 	// array of images width the same identifier
@@ -332,7 +335,7 @@ $(document).ready(function() {
 		var boxl = Math.round((windowWidth - newWidth) / 2);
 		if (boxl < 0) boxl = 0;
 
-		var titleWidth = Math.round(newWidth - 4);
+		var titleWidth = newWidth - titlePadding;
 		// if there is not change in dimensions then do not animate
 		if (box.css("width") === newWidth+"px" &&
 				box.css("height") === newHeight+"px" &&
@@ -341,12 +344,15 @@ $(document).ready(function() {
 			time = 0;
 			fadeTime = 0;
 		}
+		// first fade out image
 		imgbox.fadeOut(fadeTime, function() {
+			// if title is defined then change its content and animate width change
 			if (showedImage.title !== undefined) {
 				title.html(getTitle());
 				title.animate({
 					width: titleWidth
 				}, time);
+				// fade in the title if it was hidden and image is valid
 				if (title.css("display") === "none" && isFound) {
 					title.fadeIn(time);
 				}
@@ -354,13 +360,14 @@ $(document).ready(function() {
 				title.html("");
 				title.css("display", "none");
 			}
-
+			// at the same time as title is animated, animate box dimensions
 			box.animate({
 				width: newWidth,
 				height: newHeight,
 				top: top,
 				left: boxl
 			}, time, function() {
+				// when animation is finished, change the content and fade image back in
 				var content;
 				if (showedImage.type === Types.IMAGE) {
 					content = (isFound) ? ('<img src="'+showedImage.href+'" width="'+newWidth+'px" height="'+newHeight+'px">') : notFoundMessage;
@@ -510,7 +517,7 @@ $(document).ready(function() {
 			left: (windowWidth - newWidth)/2
 		}, time);
 		title.animate({
-			width: newWidth - 4
+			width: newWidth - titlePadding
 		}, time);
 		imgbox.children().animate({
 			width: newWidth,
