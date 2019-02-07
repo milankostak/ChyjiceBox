@@ -8,6 +8,7 @@
  * v3.1 - 2016/9/6 - removed BrowserDetect
  * v4.0 - 2018/3/11 - redesigned, no border, support for full-screen, support for swiping, translated, controls hiding
  * v4.0.1 - 2018/3/29 - fixed title width
+ * v4.0.2 - 2019/2/7 - added mp4 file format
  */
 "use strict";
 var ChyjiceBox;
@@ -21,7 +22,7 @@ $(document).ready(function() {
 	// dimensions of not found message
 	var notFoundW = 200, notFoundH = 50;
 	// allowed formats
-	var formats = ["gif", "jpg", "jpeg", "png", "pdf", "webm"];
+	var formats = ["gif", "jpg", "jpeg", "png", "pdf", "webm", "mp4"];
 	// dimensions and order of current image
 	var imgw = 0, imgh = 0, currentImageOrder = 0;
 	// more images; first image; loading in progress; image was found; is lightbox close; direction of preloading; is the image a PDF
@@ -125,7 +126,7 @@ $(document).ready(function() {
 					ii = currentImageOrder++;
 				}
 
-				var type = (format === "webm") ? Types.VIDEO : Types.IMAGE;
+				var type = (format === "webm" || format === "mp4") ? Types.VIDEO : Types.IMAGE;
 				var ab = new MyImage(href, title, type, date, lat, longt);
 
 				if (group !== "" && format !== "pdf") images.push(ab);
