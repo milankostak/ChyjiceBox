@@ -95,6 +95,17 @@ $(document).ready(function() {
 	wrapper.append('<button id="'+a+'-full" title="Celá obrazovka"></button>');
 	var fullScreenButton = $('#'+a+'-full');
 
+	wrapper.append('<button id="'+a+'-settings" title="Nastavení"></button>');
+	var settingsButton = $('#'+a+'-settings');
+
+	wrapper.append('<div id="'+a+`-settings-block">
+		<input type="radio" name="maps" id="mapycz" value="mapycz"><label for="mapycz">Mapy.cz</label>
+		<input type="radio" name="maps" id="google" value="google"><label for="google">Google maps</label>
+	</div>`);
+	var settingsBlock = $('#'+a+'-settings-block');
+	var mapyczInput = $('#'+a+'-settings-block #mapycz');
+	var googleMapsInput = $('#'+a+'-settings-block #google');
+
 	wrapper.append('<a id="newtab" href="" onclick="window.open(this.href); return false;">Otevřít ve vlastním okně</a>');
 	var newtab = $('#newtab');
 
@@ -388,13 +399,32 @@ $(document).ready(function() {
 	 */
 	function getTitle() {
 		var space = "&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;";
-		var title = (multi) ? (currentImageOrder+1) + "/" + images.length : "";
+		var title = (multi) ? (currentImageOrder + 1) + "/" + images.length : "";
 		if (showedImage.date !== undefined) {
 			title += space + showedImage.date;
 		}
 
 		if (showedImage.lat !== "" && showedImage.lat !== undefined) {
-			var map = '<a href="https://maps.google.com?q=' + showedImage.lat + ',' + showedImage.longt + '">Mapa</a>';
+			var map = "";
+
+			// remove letter from the end (N, S, E, W)
+			var longt = showedImage.longt.substring(0, showedImage.longt.length - 1);
+			var lat = showedImage.lat.substring(0, showedImage.lat.length - 1);
+
+			// if west or south then add minus sign
+			if (showedImage.longt.toUpperCase().endsWith("W")) {
+				longt = "-" + longt;
+			}
+			if (showedImage.lat.toUpperCase().endsWith("S")) {
+				lat = "-" + lat;
+			}
+
+			if (isMapyCz()) {
+				map = 'https://mapy.cz/zakladni?x=' + longt + '&y=' + lat + '&z=17&source=coor&id=' + longt + '%2C' + lat;
+			} else {
+				map = 'https://www.google.com/maps?q=loc:' + lat + ',' + longt;
+			}
+			map = '<a href="' + map + '">Mapa</a>';
 			title += space + map;
 		}
 		title += space + showedImage.title;
@@ -637,6 +667,9 @@ $(document).ready(function() {
 		fullScreenButton.animate({top: '-50'}, 350, function() {
 			fullScreenButton.hide().css("top", 0);
 		});
+		settingsButton.animate({top: '-50'}, 350, function() {
+			settingsButton.hide().css("top", 0);
+		});
 	}
 
 	/**
@@ -653,6 +686,7 @@ $(document).ready(function() {
 		}
 		closeButton.css("top", -50).show().animate({top: '0'}, 350);
 		fullScreenButton.css("top", -50).show().animate({top: '0'}, 350);
+		settingsButton.css("top", -50).show().animate({top: '0'}, 350);
 	}
 
 	/**
@@ -721,6 +755,44 @@ $(document).ready(function() {
 	}
 	fullScreenButton.click(toggleFullscreen);
 
+	/**
+	 * Settings window
+	 */
+	const mapsCookieName = "chyjicebox-maps";
+	const mapyczCookieName = "mapycz";
+	const googleMapsCookieName = "google";
+	settingsButton.click(() => {
+		manageMapsCookieValue();
+		settingsBlock.fadeToggle(120);
+	});
+	mapyczInput.click(() => setCookie(mapsCookieName, mapyczCookieName));
+	googleMapsInput.click(() => setCookie(mapsCookieName, googleMapsCookieName));
+
+	function manageMapsCookieValue() {
+		if (isMapyCz()) {
+			mapyczInput.prop("checked", true);
+		} else {
+			googleMapsInput.prop("checked", true);
+		}
+	}
+	function isMapyCz() {
+		var value = getCookie(mapsCookieName);
+		return value === "" || value === mapyczCookieName;
+	}
+
+	const setCookie = (name, value, days = 7, path = '/') => {
+		const expires = new Date(Date.now() + days * 864e5).toUTCString();
+		document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=' + path;
+	}
+	const getCookie = (name) => {
+		return document.cookie.split('; ').reduce((r, v) => {
+			const parts = v.split('=');
+			return parts[0] === name ? decodeURIComponent(parts[1]) : r
+		}, '')
+	}
+	const deleteCookie = (name, path = '/') => {
+		setCookie(name, '', -1, path);
+	}
 
 	/**
 	 * Preload icons
