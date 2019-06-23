@@ -389,6 +389,10 @@ $(document).ready(function() {
 				imgbox.html(content);
 				isLoading = false;
 				imgbox.fadeIn(fadeTime);
+
+				if (showedImage.type === Types.VIDEO) {
+					mouseMoveOnVideo();
+				}
 			});
 		});
 	}
@@ -687,19 +691,39 @@ $(document).ready(function() {
 		closeButton.css("top", -50).show().animate({top: '0'}, 350);
 		fullScreenButton.css("top", -50).show().animate({top: '0'}, 350);
 		settingsButton.css("top", -50).show().animate({top: '0'}, 350);
+		title.show();
 	}
 
 	/**
 	 * Manage mouse move listeners for showing controls back when mouse is moved
 	 */
+	var mouseMoveTimeOut = null;
 	function addMouseMoveListener() {
 		wrapper.bind(mouseMoveListenerName, function(e) {
 			showControls();
 			removeMouseMoveListener();
+
+			if (showedImage.type == Types.VIDEO) {
+				clearTimeout(mouseMoveTimeOut);
+				if (!getVideo().paused) {
+					setMouseMoveTimeOut();
+				}
+			}
 		});
 	}
 	function removeMouseMoveListener() {
 		wrapper.unbind(mouseMoveListenerName);
+	}
+
+	function mouseMoveOnVideo() {
+		$("#chyjicebox > #imgbox video").on('play', setMouseMoveTimeOut);
+	}
+
+	function setMouseMoveTimeOut() {
+		mouseMoveTimeOut = setTimeout(() => {
+			hideControls();
+			title.hide();
+		}, 2000);
 	}
 
 	/**
