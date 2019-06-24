@@ -785,12 +785,13 @@ $(document).ready(function() {
 	const mapsCookieName = "chyjicebox-maps";
 	const mapyczCookieName = "mapycz";
 	const googleMapsCookieName = "google";
+
 	settingsButton.click(() => {
 		manageMapsCookieValue();
 		settingsBlock.fadeToggle(120);
 	});
-	mapyczInput.click(() => setCookie(mapsCookieName, mapyczCookieName));
-	googleMapsInput.click(() => setCookie(mapsCookieName, googleMapsCookieName));
+	mapyczInput.click(() => Cookies.set(mapsCookieName, mapyczCookieName));
+	googleMapsInput.click(() => Cookies.set(mapsCookieName, googleMapsCookieName));
 
 	function manageMapsCookieValue() {
 		if (isMapyCz()) {
@@ -799,23 +800,31 @@ $(document).ready(function() {
 			googleMapsInput.prop("checked", true);
 		}
 	}
+
 	function isMapyCz() {
-		var value = getCookie(mapsCookieName);
+		var value = Cookies.get(mapsCookieName);
 		return value === "" || value === mapyczCookieName;
 	}
 
-	const setCookie = (name, value, days = 7, path = '/') => {
+	/**
+	 * Cookies management
+	 */
+	const Cookies = {};
+
+	Cookies.set = (name, value, days = 7, path = '/') => {
 		const expires = new Date(Date.now() + days * 864e5).toUTCString();
 		document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=' + path;
 	}
-	const getCookie = (name) => {
+
+	Cookies.get = (name) => {
 		return document.cookie.split('; ').reduce((r, v) => {
 			const parts = v.split('=');
-			return parts[0] === name ? decodeURIComponent(parts[1]) : r
+			return parts[0] === name ? decodeURIComponent(parts[1]) : r;
 		}, '')
 	}
-	const deleteCookie = (name, path = '/') => {
-		setCookie(name, '', -1, path);
+
+	Cookies.delete = (name, path = '/') => {
+		set(name, '', -1, path);
 	}
 
 	/**
