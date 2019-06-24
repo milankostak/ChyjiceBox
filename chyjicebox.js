@@ -62,7 +62,7 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * Create basic HTML structure
+	 * Create basic HTML structures
 	 * @type {String}
 	 */
 	body.append('<div id="'+a+'-wrapper"></div>');
@@ -117,7 +117,7 @@ $(document).ready(function() {
 	/////////
 
 	/**
-	 * Main initialization function. Creates events for marked links and prepares array with images
+	 * Main initialization function. Creates events for marked links and prepares array with images.
 	 */
 	function prepareLightbox() {
 		$("[data-chyjicebox]").each(function() {
@@ -720,6 +720,7 @@ $(document).ready(function() {
 	}
 
 	function setMouseMoveTimeOut() {
+		clearTimeout(mouseMoveTimeOut);
 		mouseMoveTimeOut = setTimeout(() => {
 			hideControls();
 			title.hide();
@@ -837,6 +838,8 @@ $(document).ready(function() {
 		img2.src = "/img/chyjicebox/full.png";
 		var img3 = new Image();
 		img3.src = "/img/chyjicebox/shrink.png";
+		var img4 = new Image();
+		img4.src = "/img/chyjicebox/settings.png";
 	})();
 
 //loadPrevImg/loadNextImg/el.click/swipe -> loadImg -> show (computeLightboxSize) -> animateChangeImg
