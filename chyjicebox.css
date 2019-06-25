@@ -71,6 +71,20 @@
 #chyjicebox-wrapper > button#chyjicebox-full.shrink {
   background-image: url('/img/chyjicebox/shrink.png');
 }
+#chyjicebox-wrapper > button#chyjicebox-settings {
+  position: fixed;
+  top: 1px;
+  right: 97px;
+  cursor: pointer;
+  background: none;
+  outline: none;
+  border: none;
+  width: 48px;
+  height: 48px;
+  z-index: 261;
+  background-image: url('/img/chyjicebox/settings.png');
+  transform: scale(0.55);
+}
 #chyjicebox-wrapper > button#chyjicebox-prev,
 #chyjicebox-wrapper > button#chyjicebox-next {
   position: fixed;
@@ -100,6 +114,17 @@
 #chyjicebox-wrapper > button#chyjicebox-next {
   right: 0;
 }
+#chyjicebox-wrapper > div#chyjicebox-settings-block {
+  display: none;
+  position: fixed;
+  top: 56px;
+  right: 18px;
+  background-color: #ddd;
+  padding: 17px;
+  outline: none;
+  border: none;
+  z-index: 261;
+}
 #chyjicebox-wrapper > div#chyjicebox-overlay {
   position: absolute;
   left: 0;
@@ -127,6 +152,10 @@
   border: 1px outset black;
   display: none;
   z-index: 250;
+}
+#chyjicebox-wrapper input[type=radio],
+#chyjicebox-wrapper input[type=radio] + label {
+  cursor: pointer;
 }
 #chyjicebox-loading {
   position: fixed;
