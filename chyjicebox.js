@@ -11,43 +11,43 @@
  * v4.0.2 - 2019/2/7 - added mp4 file format
  */
 "use strict";
-var ChyjiceBox;
+const ChyjiceBox = {};
 $(document).ready(function() {
 
-	var doc = $(document), body = $("body"), html = $("html");
+	const doc = $(document), body = $("body"), html = $("html");
 	// basic class
-	var a = "chyjicebox";
+	const a = "chyjicebox";
 	// message when image was not found
-	var notFoundMessage = '<div class="'+a+'-notfound">Obrázek nebyl nalezen.</strong></div>';
+	const notFoundMessage = '<div class="'+a+'-notfound">Obrázek nebyl nalezen.</strong></div>';
 	// dimensions of not found message
-	var notFoundW = 200, notFoundH = 50;
+	const notFoundW = 200, notFoundH = 50;
 	// allowed formats
-	var formats = ["gif", "jpg", "jpeg", "png", "pdf", "webm", "mp4"];
+	const formats = ["gif", "jpg", "jpeg", "png", "pdf", "webm", "mp4"];
 	// dimensions and order of current image
-	var imgw = 0, imgh = 0, currentImageOrder = 0;
+	let imgw = 0, imgh = 0, currentImageOrder = 0;
 	// more images; first image; loading in progress; image was found; is lightbox close; direction of preloading; is the image a PDF
-	var multi = false, first = true, isLoading = false, isFound = true, isClosed = true, loadNext = true, isPDF = false;
+	let multi = false, first = true, isLoading = false, isFound = true, isClosed = true, loadNext = true, isPDF = false;
 	// make images smaller to fit the screen size
-	var fitToScreen = true;
+	let fitToScreen = true;
 	// if controls are hidden when keyboard is being used
-	var controlsHidden = false;
+	let controlsHidden = false;
 	// how many images to preload
-	var preloadedImages = 2;
+	const preloadedImages = 2;
 	// left and right padding of the title - taking into account when calculating width for content
-	var titlePadding = 20;
+	const titlePadding = 20;
 	// information about current image
-	var showedImage = null;
+	let showedImage = null;
 	// array of images width the same identifier
-	var images = [];
+	let images = [];
 	// listeners names
-	var keyListenerName = "keydown.chyjicebox-keypress",
+	const keyListenerName = "keydown.chyjicebox-keypress",
 		mouseMoveListenerName = "mousemove.chyjicebox-mousemove";
 	// variables for resizing, boolean for determining the state and timer for periodical check
-	var canResize = true, resizeTimer = null;
+	let canResize = true, resizeTimer = null;
 	// variables for swiping between pictures
-	var touchStartX = null, touchStartY = null;
+	let touchStartX = null, touchStartY = null;
 	// content type
-	var Types = {};
+	const Types = {};
 	Types.IMAGE = 1;
 	Types.VIDEO = 2;
 
@@ -66,51 +66,51 @@ $(document).ready(function() {
 	 * @type {String}
 	 */
 	body.append('<div id="'+a+'-wrapper"></div>');
-	var wrapper = $("#"+a+"-wrapper");
+	const wrapper = $("#"+a+"-wrapper");
 
 	wrapper.append('<div id="'+a+'"></div>');
-	var box = $("#"+a);
+	const box = $("#"+a);
 
 	wrapper.append('<div id="'+a+'-overlay"></div>');
-	var overlay = $('#'+a+'-overlay');
+	const overlay = $('#'+a+'-overlay');
 
 	body.append('<div id="'+a+'-loading"></div>');
-	var loading = $('#'+a+'-loading');
+	const loading = $('#'+a+'-loading');
 
 	box.append('<div id="imgbox"></div>');
-	var imgbox = $('#'+a+' #imgbox');
+	const imgbox = $('#'+a+' #imgbox');
 
 	box.append('<div id="title"></div>');
-	var title = $('#'+a+' #title');
+	const title = $('#'+a+' #title');
 
 	wrapper.append('<button id="'+a+'-prev" type="button" title="Předchozí">◁</button>');
-	var prevDiv = $('#'+a+'-prev');
+	const prevDiv = $('#'+a+'-prev');
 
 	wrapper.append('<button id="'+a+'-next" type="button" title="Další">▷</button>');
-	var nextDiv = $('#'+a+'-next');
+	const nextDiv = $('#'+a+'-next');
 
 	wrapper.append('<button id="'+a+'-close" title="Zavřít">✕</button>');
-	var closeButton = $('#'+a+'-close');
+	const closeButton = $('#'+a+'-close');
 
 	wrapper.append('<button id="'+a+'-full" title="Celá obrazovka"></button>');
-	var fullScreenButton = $('#'+a+'-full');
+	const fullScreenButton = $('#'+a+'-full');
 
 	wrapper.append('<button id="'+a+'-settings" title="Nastavení"></button>');
-	var settingsButton = $('#'+a+'-settings');
+	const settingsButton = $('#'+a+'-settings');
 
 	wrapper.append('<div id="'+a+`-settings-block">
 		<input type="radio" name="maps" id="mapycz" value="mapycz"><label for="mapycz">Mapy.cz</label>
 		<input type="radio" name="maps" id="google" value="google"><label for="google">Google maps</label>
 	</div>`);
-	var settingsBlock = $('#'+a+'-settings-block');
-	var mapyczInput = $('#'+a+'-settings-block #mapycz');
-	var googleMapsInput = $('#'+a+'-settings-block #google');
+	const settingsBlock = $('#'+a+'-settings-block');
+	const mapyczInput = $('#'+a+'-settings-block #mapycz');
+	const googleMapsInput = $('#'+a+'-settings-block #google');
 
 	wrapper.append('<a id="newtab" href="" onclick="window.open(this.href); return false;">Otevřít ve vlastním okně</a>');
-	var newtab = $('#newtab');
+	const newtab = $('#newtab');
 
 	wrapper.append('<iframe id="'+a+'-iframe" src=""></iframe>');
-	var iframe = $('#'+a+'-iframe');
+	const iframe = $('#'+a+'-iframe');
 
 	/////////
 	/// FUNCTIONS
@@ -121,24 +121,24 @@ $(document).ready(function() {
 	 */
 	function prepareLightbox() {
 		$("[data-chyjicebox]").each(function() {
-			var el = $(this);
-			var href = el.attr("href");
-			var format = href.toLowerCase().split(".")[href.toLowerCase().split(".").length - 1];
+			const el = $(this);
+			const href = el.attr("href");
+			const format = href.toLowerCase().split(".")[href.toLowerCase().split(".").length - 1];
 			if ($.inArray(format, formats) !== -1) {
-				var group = el.attr("data-chyjicebox");
-				var title = el.children().attr("alt");
-				var date = el.attr("data-date");
-				var lat = el.attr("data-lat");
-				var longt = el.attr("data-long");
+				const group = el.attr("data-chyjicebox");
+				const title = el.children().attr("alt");
+				const date = el.attr("data-date");
+				const lat = el.attr("data-lat");
+				const longt = el.attr("data-long");
 
 				// order of image when lightbox is opened to know it immediately
-				var ii = 0;
+				let ii = 0;
 				if (group !== "") {
 					ii = currentImageOrder++;
 				}
 
-				var type = (format === "webm" || format === "mp4") ? Types.VIDEO : Types.IMAGE;
-				var ab = new MyImage(href, title, type, date, lat, longt);
+				const type = (format === "webm" || format === "mp4") ? Types.VIDEO : Types.IMAGE;
+				const ab = new MyImage(href, title, type, date, lat, longt);
 
 				if (group !== "" && format !== "pdf") images.push(ab);
 				// when thumb image or link is clicked show the image
@@ -184,12 +184,12 @@ $(document).ready(function() {
 			if (!showedImage.loaded) {
 				loading.show();
 			}
-			var img = new Image();
+			const img = new Image();
 			img.onload = function() {
 				showedImage.loaded = true;
 				if (!isClosed) {
 					show(this);
-					for (var j = 1; multi && j <= preloadedImages; j++) preloadImg(j);
+					for (let j = 1; multi && j <= preloadedImages; j++) preloadImg(j);
 				}
 			};
 			img.onerror = function() {
@@ -213,7 +213,7 @@ $(document).ready(function() {
 	function show(img) {
 		loading.hide();
 
-		var newWidth, newHeight;
+		let newWidth, newHeight;
 		if (showedImage.type === Types.IMAGE) {
 			title.removeClass("top");
 			isFound = (typeof img === "object");
@@ -230,7 +230,7 @@ $(document).ready(function() {
 		if (first) open();
 
 		if (isFound) {
-			var data = computeLightboxSize();
+			const data = computeLightboxSize();
 			animateChangeImg(data[0], data[1], doc.scrollTop() + data[2]);
 		} else {
 			title.css("display", "none");
@@ -252,7 +252,7 @@ $(document).ready(function() {
 		showControls();
 		wrapper.show();
 		if (fitToScreen || isPDF) { // let big documents (and PDFs) scroll
-			var tempW = html.innerWidth();
+			let tempW = html.innerWidth();
 			html.css("overflow", "hidden");
 			// scrollbar can have different width on different devices and browsers
 			// sometimes it can be hidden by some extension
@@ -260,7 +260,7 @@ $(document).ready(function() {
 			body.css("padding-right", tempW + "px");
 		}
 		overlay.fadeIn(200, function() {
-			var el = isPDF ? iframe : box;
+			const el = isPDF ? iframe : box;
 			el.fadeIn(100, function() {
 				overlay.css("height", doc.height());
 			});
@@ -270,7 +270,7 @@ $(document).ready(function() {
 	/**
 	 * Close lightbox
 	 */
-	var close = function() {
+	function close() {
 		document.exitFullscreen();
 		fullScreenButton.removeClass("shrink");
 		removeKeyListener();
@@ -299,9 +299,9 @@ $(document).ready(function() {
 	 * @return {Array} array with dimensions - width and height of lightbox and top space
 	 */
 	function computeLightboxSize() {
-		var windowWidth = $(window).width(),
-			windowHeight = $(window).height(),
-			newWidth = imgw,
+		const windowWidth = $(window).width(),
+			windowHeight = $(window).height();
+		let newWidth = imgw,
 			newHeight = imgh,
 			changeH = false,//cannot fit in height
 			changeW = false;//cannot fit in width
@@ -317,7 +317,7 @@ $(document).ready(function() {
 			changeW = true;
 		}
 		// small image has to be centered
-		var top = 0;
+		let top = 0;
 		if (fitToScreen && (changeW  || (!changeW && !changeH))) {
 			// if the image does not fit in width then calculate top space
 			// if there was not any change in dimensions then there is free space so it is necessary to calculate top space
@@ -336,18 +336,18 @@ $(document).ready(function() {
 	 * @param  {number} top       top space
 	 */
 	function animateChangeImg(newWidth, newHeight, top) {
-		var windowWidth = $(window).width(),
-			time = first ? 1 : 300,
+		const windowWidth = $(window).width();
+		let time = first ? 1 : 300,
 			fadeTime = first ? 1 : 180;
 
 		newWidth = Math.round(newWidth);
 		newHeight = Math.round(newHeight);
 		top = Math.round(top);
 
-		var boxl = Math.round((windowWidth - newWidth) / 2);
+		let boxl = Math.round((windowWidth - newWidth) / 2);
 		if (boxl < 0) boxl = 0;
 
-		var titleWidth = newWidth - titlePadding;
+		const titleWidth = newWidth - titlePadding;
 		// if there is not change in dimensions then do not animate
 		if (box.css("width") === newWidth+"px" &&
 				box.css("height") === newHeight+"px" &&
@@ -380,7 +380,7 @@ $(document).ready(function() {
 				left: boxl
 			}, time, function() {
 				// when animation is finished, change the content and fade image back in
-				var content;
+				let content;
 				if (showedImage.type === Types.IMAGE) {
 					content = (isFound) ? ('<img src="'+showedImage.href+'" width="'+newWidth+'px" height="'+newHeight+'px">') : notFoundMessage;
 				} else {
@@ -402,18 +402,18 @@ $(document).ready(function() {
 	 * @return {string} title with all information
 	 */
 	function getTitle() {
-		var space = "&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;";
-		var title = (multi) ? (currentImageOrder + 1) + "/" + images.length : "";
+		const space = "&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;";
+		let title = (multi) ? (currentImageOrder + 1) + "/" + images.length : "";
 		if (showedImage.date !== undefined) {
 			title += space + showedImage.date;
 		}
 
 		if (showedImage.lat !== "" && showedImage.lat !== undefined) {
-			var map = "";
+			let map = "";
 
 			// remove letter from the end (N, S, E, W)
-			var longt = showedImage.longt.substring(0, showedImage.longt.length - 1);
-			var lat = showedImage.lat.substring(0, showedImage.lat.length - 1);
+			let longt = showedImage.longt.substring(0, showedImage.longt.length - 1);
+			let lat = showedImage.lat.substring(0, showedImage.lat.length - 1);
 
 			// if west or south then add minus sign
 			if (showedImage.longt.toUpperCase().endsWith("W")) {
@@ -440,15 +440,15 @@ $(document).ready(function() {
 	 * @param  {number} x number that tells the order of images which is going to be preloaded
 	 */
 	function preloadImg(x) {
-		var direction = (loadNext) ? x : -x;
-		var temp = currentImageOrder + direction;
+		const direction = (loadNext) ? x : -x;
+		let temp = currentImageOrder + direction;
 
 		if (currentImageOrder + direction < 0) temp = 0;
 		else if (currentImageOrder + direction > images.length - 1) temp = images.length-1;
 
-		var x1 = images[temp];
+		const x1 = images[temp];
 		if (!x1.loaded && x1.type !== Types.VIDEO) {
-			var img = new Image();
+			const img = new Image();
 			img.onload = function() {
 				x1.loaded = true;
 			};
@@ -480,7 +480,7 @@ $(document).ready(function() {
 	nextDiv.click(loadNextImg);
 	imgbox.click(function() {
 		// block click on playing video
-		var video = getVideo();
+		const video = getVideo();
 		if (showedImage.type !== Types.VIDEO || video.currentTime === 0 || video.paused) {
 			loadNextImg();
 		}
@@ -498,11 +498,11 @@ $(document).ready(function() {
 			return;
 		}
 
-		var touchMoveX = e.touches[0].clientX;
-		var touchMoveY = e.touches[0].clientY;
+		const touchMoveX = e.touches[0].clientX;
+		const touchMoveY = e.touches[0].clientY;
 
-		var xDiff = touchStartX - touchMoveX;
-		var yDiff = touchStartY - touchMoveY;
+		const xDiff = touchStartX - touchMoveX;
+		const yDiff = touchStartY - touchMoveY;
 
 		if (Math.abs(xDiff) > Math.abs(yDiff)) { // move to the side
 			if (xDiff > 0) loadNextImg();
@@ -529,8 +529,8 @@ $(document).ready(function() {
 	 * @return {number}   top space
 	 */
 	function notFountTop() {
-		var windowHeight = $(window).height();
-		var windowHeight40Percent = 2 * windowHeight / 5;
+		const windowHeight = $(window).height();
+		const windowHeight40Percent = 2 * windowHeight / 5;
 		return doc.scrollTop() + windowHeight40Percent;
 	}
 
@@ -539,7 +539,7 @@ $(document).ready(function() {
 	 */
 	function refreshWindow() {
 		canResize = true;
-		var windowWidth = $(window).width(),
+		const windowWidth = $(window).width(),
 			data = computeLightboxSize(),
 			newWidth = data[0],
 			newHeight = data[1],
@@ -575,7 +575,7 @@ $(document).ready(function() {
 	function wheel(e) {
 		if (multi) {
 			// IE doesn't know wheelDeltaX and wheelDeltaY
-			var down = (signum(e.originalEvent.wheelDelta || -e.detail) < 0);
+			const down = (signum(e.originalEvent.wheelDelta || -e.detail) < 0);
 			if (down) loadNextImg();
 			else loadPrevImg();
 			e.preventDefault();
@@ -595,11 +595,11 @@ $(document).ready(function() {
 	}
 	function addKeyListener() {
 		doc.bind(keyListenerName, function(e) {
-			var specialKey = (e.ctrlKey || e.shiftKey || e.altKey);
+			const specialKey = (e.ctrlKey || e.shiftKey || e.altKey);
 			switch (e.which) {
 				case 32: /* space */
 						if (showedImage.type === Types.VIDEO) {
-							var vid = getVideo();
+							const vid = getVideo();
 							if (vid.paused) vid.play();
 							else vid.pause();
 							e.preventDefault();
@@ -697,7 +697,7 @@ $(document).ready(function() {
 	/**
 	 * Manage mouse move listeners for showing controls back when mouse is moved
 	 */
-	var mouseMoveTimeOut = null;
+	let mouseMoveTimeOut = null;
 	function addMouseMoveListener() {
 		wrapper.bind(mouseMoveListenerName, function(e) {
 			showControls();
@@ -732,8 +732,8 @@ $(document).ready(function() {
 	 * @param  {number} change relative change in seconds
 	 */
 	function videoSeek(change) {
-		var vid = getVideo();
-		var seekToTime = vid.currentTime + change;
+		const vid = getVideo();
+		const seekToTime = vid.currentTime + change;
 		if (seekToTime < 0) {
 			vid.currentTime = 0;
 		} else if (seekToTime > vid.duration) {
@@ -754,7 +754,7 @@ $(document).ready(function() {
 	/**
 	 * Full screen support
 	 */
-	var fsElement = document.body;
+	const fsElement = document.body;
 	fsElement.requestFullscreen = fsElement.requestFullscreen ||
 						fsElement.mozRequestFullscreen ||
 						fsElement.mozRequestFullScreen ||
@@ -803,7 +803,7 @@ $(document).ready(function() {
 	}
 
 	function isMapyCz() {
-		var value = Cookies.get(mapsCookieName);
+		const value = Cookies.get(mapsCookieName);
 		return value === "" || value === mapyczCookieName;
 	}
 
@@ -832,21 +832,19 @@ $(document).ready(function() {
 	 * Preload icons
 	 */
 	(function initIcons() {
-		var img1 = new Image();
+		const img1 = new Image();
 		img1.src = "/img/chyjicebox/loading.gif";
-		var img2 = new Image();
+		const img2 = new Image();
 		img2.src = "/img/chyjicebox/full.png";
-		var img3 = new Image();
+		const img3 = new Image();
 		img3.src = "/img/chyjicebox/shrink.png";
-		var img4 = new Image();
+		const img4 = new Image();
 		img4.src = "/img/chyjicebox/settings.png";
 	})();
 
 //loadPrevImg/loadNextImg/el.click/swipe -> loadImg -> show (computeLightboxSize) -> animateChangeImg
 //																				 (-> open)
 //													-> preloadImg
-
-	ChyjiceBox = {};
 
 	ChyjiceBox.init = function(disableFitToScreen) {
 		if (disableFitToScreen) fitToScreen = false;
