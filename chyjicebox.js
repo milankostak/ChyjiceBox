@@ -607,9 +607,9 @@ $(document).ready(function() {
 						return false;
 						//break;
 				case 27: /* Esc */
-						 close();
-						 e.preventDefault();
-						 break;
+						close();
+						e.preventDefault();
+						break;
 				case 87: /* w */
 				case 65: /* a */
 				case 33: /* PgUp */
@@ -647,7 +647,8 @@ $(document).ready(function() {
 						break;
 				case 8: /* BackSpace */
 				case 13: /* Enter */
-						 e.preventDefault(); break;
+						e.preventDefault();
+						break;
 			}
 		});
 	}
