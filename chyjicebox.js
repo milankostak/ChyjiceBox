@@ -842,16 +842,14 @@ $(document).ready(function() {
 //																				 (-> open)
 //													-> preloadImg
 
-	ChyjiceBox.init = function(disableFitToScreen) {
+	ChyjiceBox.init = (disableFitToScreen) => {
 		if (disableFitToScreen) fitToScreen = false;
 		prepareLightbox();
 	};
 
-	ChyjiceBox.clean = function() {
-		cleanLightbox();
-	};
+	ChyjiceBox.clean = () => cleanLightbox();
 
-	ChyjiceBox.isClosed = function() {
+	ChyjiceBox.isClosed = () => {
 		return isClosed;
 	};
 
