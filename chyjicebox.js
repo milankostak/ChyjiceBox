@@ -271,8 +271,7 @@ $(document).ready(function() {
 	 * Close lightbox
 	 */
 	function close() {
-		document.exitFullscreen();
-		fullScreenButton.removeClass("shrink");
+		exitFullscreen();
 		removeKeyListener();
 		loading.hide();
 		iframe.hide();
@@ -756,22 +755,18 @@ $(document).ready(function() {
 	 * Full screen support
 	 */
 	const fsElement = document.body;
-	fsElement.requestFullscreen = fsElement.requestFullscreen ||
-						fsElement.mozRequestFullscreen ||
-						fsElement.mozRequestFullScreen ||
-						fsElement.webkitRequestFullscreen ||
-						fsElement.msRequestFullscreen;
-	document.exitFullscreen = document.exitFullscreen ||
-						document.mozExitFullscreen ||
-						document.mozExitFullScreen ||
-						document.webkitExitFullscreen ||
-						document.mozCancelFullScreen ||
-						document.msExitFullscreen;
+	fsElement.requestFullscreen = fsElement.requestFullscreen || fsElement.webkitRequestFullscreen;
+	document.exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+
+	function exitFullscreen() {
+		if (document.fullscreenElement === fsElement || document.webkitFullscreenElement === fsElement) {
+			document.exitFullscreen();
+			fullScreenButton.removeClass("shrink");
+		}
+	}
 
 	function toggleFullscreen() {
-		if (document.fullscreenElement === fsElement || document.webkitFullscreenElement === fsElement ||
-			document.mozFullscreenElement === fsElement || document.mozFullScreenElement === fsElement ||
-			document.msFullscreenElement === fsElement) {
+		if (document.fullscreenElement === fsElement || document.webkitFullscreenElement === fsElement) {
 			document.exitFullscreen();
 			fullScreenButton.removeClass("shrink");
 		} else {
