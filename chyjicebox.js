@@ -106,8 +106,8 @@ $(document).ready(function() {
 	const mapyczInput = $('#'+a+'-settings-block #mapycz');
 	const googleMapsInput = $('#'+a+'-settings-block #google');
 
-	wrapper.append('<a id="newtab" href="" onclick="window.open(this.href); return false;">Otevřít ve vlastním okně</a>');
-	const newtab = $('#newtab');
+	wrapper.append('<a id="'+a+'-newtab" href="" onclick="window.open(this.href); return false;" title="Otevřít ve vlastním okně"></a>');
+	const newtab = $('#'+a+'-newtab');
 
 	wrapper.append('<iframe id="'+a+'-iframe" src=""></iframe>');
 	const iframe = $('#'+a+'-iframe');
@@ -153,11 +153,8 @@ $(document).ready(function() {
 					isPDF = (format === "pdf");
 					if (isPDF) {
 						iframe.attr("src", href);
-						newtab.attr("href", href);
-						newtab.show();
 						open();
 					} else {
-						newtab.hide();
 						multi = (group !== "");
 						if (multi) imgbox.addClass("cursorpointer");
 						else imgbox.removeClass("cursorpointer");
@@ -388,6 +385,7 @@ $(document).ready(function() {
 				imgbox.html(content);
 				isLoading = false;
 				imgbox.fadeIn(fadeTime);
+				newtab.attr("href", showedImage.href);
 
 				if (showedImage.type === Types.VIDEO) {
 					mouseMoveOnVideo();
@@ -674,6 +672,9 @@ $(document).ready(function() {
 		settingsButton.animate({top: '-50'}, 350, function() {
 			settingsButton.hide().css("top", 0);
 		});
+		newtab.animate({top: '-50'}, 350, function() {
+			newtab.hide().css("top", 0);
+		});
 	}
 
 	/**
@@ -691,6 +692,7 @@ $(document).ready(function() {
 		closeButton.css("top", -50).show().animate({top: '0'}, 350);
 		fullScreenButton.css("top", -50).show().animate({top: '0'}, 350);
 		settingsButton.css("top", -50).show().animate({top: '0'}, 350);
+		newtab.css("top", -50).show().animate({top: '0'}, 350);
 		title.show();
 	}
 

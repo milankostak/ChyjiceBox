@@ -137,11 +137,17 @@
 }
 #chyjicebox-wrapper > a#newtab {
   position: fixed;
-  top: 0;
+  top: 1px;
   left: 0;
-  color: silver;
-  z-index: 260;
-  display: none;
+  cursor: pointer;
+  background: none;
+  outline: none;
+  border: none;
+  width: 48px;
+  height: 48px;
+  z-index: 261;
+  background-image: url('/img/chyjicebox/new_window.png');
+  transform: scale(0.55);
 }
 #chyjicebox-wrapper > iframe#chyjicebox-iframe {
   position: fixed;
