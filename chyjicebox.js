@@ -838,6 +838,8 @@ $(document).ready(function() {
 		img3.src = "/img/chyjicebox/shrink.png";
 		const img4 = new Image();
 		img4.src = "/img/chyjicebox/settings.png";
+		const img5 = new Image();
+		img5.src = "/img/chyjicebox/newtab.png";
 	})();
 
 //loadPrevImg/loadNextImg/el.click/swipe -> loadImg -> show (computeLightboxSize) -> animateChangeImg
