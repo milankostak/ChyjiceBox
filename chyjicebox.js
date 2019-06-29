@@ -9,6 +9,7 @@
  * v4.0 - 2018/3/11 - redesigned, no border, support for full-screen, support for swiping, translated, controls hiding
  * v4.0.1 - 2018/3/29 - fixed title width
  * v4.0.2 - 2019/2/7 - added mp4 file format
+ * v5.0 - 2019/6/29 - maps settings, open in new window icon, hide controls when playing video, ES6, fine-tuned CSS styles
  */
 "use strict";
 const ChyjiceBox = {};
@@ -819,7 +820,7 @@ $(document).ready(function() {
 		return document.cookie.split('; ').reduce((r, v) => {
 			const parts = v.split('=');
 			return parts[0] === name ? decodeURIComponent(parts[1]) : r;
-		}, '')
+		}, '');
 	}
 
 	Cookies.delete = (name, path = '/') => {
