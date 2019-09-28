@@ -10,6 +10,7 @@
  * v4.0.1 - 2018/3/29 - fixed title width
  * v4.0.2 - 2019/2/7 - added mp4 file format
  * v5.0 - 2019/6/29 - maps settings, open in new window icon, hide controls when playing video, ES6, fine-tuned CSS styles
+ * v5.1 - 2019/9/28 - improved requesting video dimensions
  */
 "use strict";
 const ChyjiceBox = {};
@@ -178,29 +179,32 @@ $(document).ready(function() {
 	 * This method calls show() and picture preloading
 	 */
 	function loadImg() {
-		if (showedImage.type === Types.IMAGE) {
-			if (!showedImage.loaded) {
-				loading.show();
+		if (!showedImage.loaded) {
+			loading.show();
+		}
+		const successFunction = function() {
+			showedImage.loaded = true;
+			if (!isClosed) {
+				show(this);
+				for (let j = 1; multi && j <= preloadedImages; j++) preloadImg(j);
 			}
-			const img = new Image();
-			img.onload = function() {
-				showedImage.loaded = true;
-				if (!isClosed) {
-					show(this);
-					for (let j = 1; multi && j <= preloadedImages; j++) preloadImg(j);
-				}
-			};
+		};
+		let img;
+		if (showedImage.type === Types.IMAGE) {
+			img = new Image();
+			img.onload = successFunction;
 			img.onerror = function() {
 				showedImage.loaded = true;
 				if (!isClosed) {
 					show(false);
 				}
 			};
-			isLoading = true;
-			img.src = showedImage.href;
 		} else {
-			show();
+			img = document.createElement("video");
+			img.oncanplay = successFunction;
 		}
+		isLoading = true;
+		img.src = showedImage.href;
 	}
 
 	/**
@@ -221,8 +225,8 @@ $(document).ready(function() {
 		} else {
 			title.addClass("top");
 			isFound = true;
-			newWidth = imgw = 1920;
-			newHeight = imgh = 1080;
+			newWidth = imgw = img.videoWidth;
+			newHeight = imgh = img.videoHeight;
 		}
 
 		if (first) open();
