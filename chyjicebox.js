@@ -1,6 +1,6 @@
 /**
  * @requires chyjicebox.css
- * @requires jquery.js
+ * @requires jquery3.js
  * v3.0 - 2015/12/27 - video support, reworked image centering
  * v3.0.1 - 2016/7/10 - changes in displaying time and GPS
  * v3.0.2 - 2016/7/20 - refactoring
@@ -11,10 +11,11 @@
  * v4.0.2 - 2019/2/7 - added mp4 file format
  * v5.0 - 2019/6/29 - maps settings, open in new window icon, hide controls when playing video, ES6, fine-tuned CSS styles
  * v5.1 - 2019/9/28 - improved requesting video dimensions
+ * v5.1.1 - 2022/5/4 - minor revisions
  */
 "use strict";
 const ChyjiceBox = {};
-$(document).ready(function() {
+$(function() {
 
 	const doc = $(document), body = $("body"), html = $("html");
 	// basic class
@@ -42,8 +43,8 @@ $(document).ready(function() {
 	// array of images width the same identifier
 	let images = [];
 	// listeners names
-	const keyListenerName = "keydown.chyjicebox-keypress",
-		mouseMoveListenerName = "mousemove.chyjicebox-mousemove";
+	const keyListenerName = "keydown.chyjicebox-keypress";
+	const mouseMoveListenerName = "mousemove.chyjicebox-mousemove";
 	// variables for resizing, boolean for determining the state and timer for periodical check
 	let canResize = true, resizeTimer = null;
 	// variables for swiping between pictures
@@ -300,8 +301,8 @@ $(document).ready(function() {
 	 * @return {Array} array with dimensions - width and height of lightbox and top space
 	 */
 	function computeLightboxSize() {
-		const windowWidth = $(window).width(),
-			windowHeight = $(window).height();
+		const windowWidth = $(window).width();
+		const windowHeight = $(window).height();
 		let newWidth = imgw,
 			newHeight = imgh,
 			changeH = false,//cannot fit in height
@@ -338,22 +339,22 @@ $(document).ready(function() {
 	 */
 	function animateChangeImg(newWidth, newHeight, top) {
 		const windowWidth = $(window).width();
-		let time = first ? 1 : 300,
-			fadeTime = first ? 1 : 180;
+		let time = first ? 1 : 300;
+		let fadeTime = first ? 1 : 180;
 
 		newWidth = Math.round(newWidth);
 		newHeight = Math.round(newHeight);
 		top = Math.round(top);
 
-		let boxl = Math.round((windowWidth - newWidth) / 2);
-		if (boxl < 0) boxl = 0;
+		let boxLeft = Math.round((windowWidth - newWidth) / 2);
+		if (boxLeft < 0) boxLeft = 0;
 
 		const titleWidth = newWidth - titlePadding;
 		// if there is not change in dimensions then do not animate
 		if (box.css("width") === newWidth+"px" &&
 				box.css("height") === newHeight+"px" &&
 				box.css("top") === top+"px" &&
-				box.css("left") === boxl+"px") {
+				box.css("left") === boxLeft+"px") {
 			time = 0;
 			fadeTime = 0;
 		}
@@ -378,7 +379,7 @@ $(document).ready(function() {
 				width: newWidth,
 				height: newHeight,
 				top: top,
-				left: boxl
+				left: boxLeft
 			}, time, function() {
 				// when animation is finished, change the content and fade image back in
 				let content;
